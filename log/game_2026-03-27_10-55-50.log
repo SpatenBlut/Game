@@ -1,0 +1,19 @@
+[10:55:50.830] === BRAWLHAVEN LOG ===
+[10:55:50.845] Zeit:       27.03.2026 10:55:50
+[10:55:50.846] OS:         Linux Mint 22.1
+[10:55:50.851] Arch:       X64
+[10:55:50.851] Runtime:    .NET 9.0.14
+[10:55:50.851] Log-Datei:  /home/dion/Schreibtisch/game/publish/logs/game_2026-03-27_10-55-50.log
+[10:55:50.851] =====================
+[10:55:50.881] Viewport: 1920x1080
+[10:55:50.882] Adapter:  Mesa Intel(R) HD Graphics 520 (SKL GT2)
+[10:55:50.884] Initialize abgeschlossen – Zustand: Menu
+[10:56:24.401] EXCEPTION in Update: ArgumentException: Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.
+[10:56:24.424]   StackTrace:    at System.Buffer.BlockCopy(Array src, Int32 srcOffset, Array dst, Int32 dstOffset, Int32 count)
+                at GameNet.SendStateSync(Vector2 p1Pos, Vector2 p1Vel, Single p1Dmg, Int32 p1Stocks, Vector2 p2Pos, Vector2 p2Vel, Single p2Dmg, Int32 p2Stocks, Int32 scoreP1, Int32 scoreP2) in /home/nicola/RiderProjects/App2/App2/Net/GameNet.cs:line 192
+                at Game1.UpdateInner(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 252
+                at Game1.Update(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 152
+[10:56:24.436] P1 Pos={X:-200 Y:220} Vel={X:0 Y:0} State=IDLE
+[10:56:24.436] P2 Pos={X:200 Y:220} Vel={X:0 Y:0} State=IDLE
+[10:56:24.437] GameState=Playing Particles=0
+[10:56:24.437] === Spiel beendet ===
