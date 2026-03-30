@@ -31,3 +31,4 @@
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/App2.pdb
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/App2.genruntimeconfig.cache
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/ref/App2.dll
+/home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/App2.sourcelink.json

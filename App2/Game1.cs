@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -6,53 +6,58 @@ using System.Collections.Generic;
 
 public class Game1 : Game
 {
-    // ── Core ──────────────────────────────────────────────────────────────
     GraphicsDeviceManager _graphics;
     SpriteBatch           _spriteBatch;
     Texture2D             _pixel;
 
-    // ── Debug ─────────────────────────────────────────────────────────────
     bool _debugOpen = false;
     const int DEBUG_W = 285;
 
-    // ── Game State ────────────────────────────────────────────────────────
-    enum GameState { Playing, GameOver, RoundOver }
-    GameState _state = GameState.Playing;
+    enum GameState { Menu, Lobby, Playing, GameOver, RoundOver }
+    GameState _state = GameState.Menu;
     int       _roundWinner = -1;
     string    _lastKillText = "";
 
-    // ── Score / Match ─────────────────────────────────────────────────────
-    int  _scoreP1 = 0, _scoreP2 = 0;
+    int  _scoreP1    = 0;
+    int  _scoreEnemy = 0;
+    static readonly Color _enemyColor = new Color(255, 100, 80);
     const int SCORE_TO_WIN = 3;
 
-    // ── Timer ─────────────────────────────────────────────────────────────
-    float _roundTime = 90f; // 1.5 Minuten
+    Vector2 _mousePos;
+
+    float _roundTime = 120f;
     bool  _timerRunning = true;
 
-    // ── Round-Over overlay ────────────────────────────────────────────────
     float _roundOverTimer = 0f;
     const float ROUND_OVER_DELAY = 2.2f;
+    float _killTextTimer = 0f;
 
-    // ── Camera ────────────────────────────────────────────────────────────
     float   _camZoom  = 1f;
     float   _camShake = 0f;
     Vector2 _camPos;
     Vector2 _camShakeOffset;
 
-    // ── FPS ───────────────────────────────────────────────────────────────
     float _fps, _fpsTimer;
     int   _fpsFrames;
 
-    // ── World (blast zones) ───────────────────────────────────────────────
     const float BL = -1050f, BR = 1050f, BT = -680f, BB = 780f;
 
-    // ── Objects ───────────────────────────────────────────────────────────
     List<Platform> _platforms = new();
     List<Particle> _particles = new();
-    Player _p1, _p2;
+    Player _p1;
+    Player _p2;
 
-    // ── Input ─────────────────────────────────────────────────────────────
+    GameNet       _net          = new GameNet();
+    bool          _isLocalMode  = false;
+    BotController _bot          = new BotController();
+    int           _myCode       = 0;
+    string        _codeInput    = "";
+
+    float _syncTimer = 0f;
+    static readonly Random _rng = new Random();
+
     KeyboardState _prevKeys;
+    MouseState    _prevMouse;
 
     int SW, SH;
 
@@ -60,76 +65,72 @@ public class Game1 : Game
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
-        IsMouseVisible = false;
+        IsMouseVisible = true;
 
-        // ── Fullscreen ────────────────────────────────────────────────────
         _graphics.IsFullScreen = true;
         _graphics.PreferredBackBufferWidth  = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
         _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
 
         _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
+
+        Window.TextInput += OnTextInput;
     }
 
     protected override void Initialize()
     {
+        Logger.Init();
         base.Initialize();
         SW = GraphicsDevice.Viewport.Width;
         SH = GraphicsDevice.Viewport.Height;
+        Logger.Log($"Viewport: {SW}x{SH}");
+        Logger.Log($"Adapter:  {GraphicsDevice.Adapter.Description}");
         BuildMap();
         ResetRound();
+        _state = GameState.Menu;
+        Logger.Log("Initialize abgeschlossen – Zustand: Menu");
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // MAP  –  mehrschichtige Arena mit Höhenunterschieden & versteckten Ecken
-    // ═══════════════════════════════════════════════════════════════════════
     void BuildMap()
     {
         _platforms.Clear();
 
-        // ── Hauptboden (breite Mittelbühne) ───────────────────────────────
-        _platforms.Add(new Platform(-500,  220,  1000, 30, PlatType.Main));
+        _platforms.Add(new Platform(-500,  220, 1000, 30, PlatType.Main));
 
-        // ── Untere Seitenabsätze (tiefer als Main, nah an Blast) ──────────
-        _platforms.Add(new Platform(-820,  340,   220, 22, PlatType.Side));
-        _platforms.Add(new Platform( 600,  340,   220, 22, PlatType.Side));
+        _platforms.Add(new Platform(-820,  340,  220, 22, PlatType.Side));
+        _platforms.Add(new Platform( 600,  340,  220, 22, PlatType.Side));
 
-        // ── Mittlere Ebene links/rechts ───────────────────────────────────
-        _platforms.Add(new Platform(-680,   80,   230, 22, PlatType.Side));
-        _platforms.Add(new Platform( 450,   80,   230, 22, PlatType.Side));
+        _platforms.Add(new Platform(-680,   80,  230, 22, PlatType.Side));
+        _platforms.Add(new Platform( 450,   80,  230, 22, PlatType.Side));
 
-        // ── Obere Mitteplattform ──────────────────────────────────────────
-        _platforms.Add(new Platform(-155,  -80,   310, 22, PlatType.Side));
+        _platforms.Add(new Platform(-155,  -80,  310, 22, PlatType.Side));
 
-        // ── Hohe Eckplattformen ───────────────────────────────────────────
-        _platforms.Add(new Platform(-820,  -80,   170, 18, PlatType.Small));
-        _platforms.Add(new Platform( 650,  -80,   170, 18, PlatType.Small));
+        _platforms.Add(new Platform(-820,  -80,  170, 18, PlatType.Small));
+        _platforms.Add(new Platform( 650,  -80,  170, 18, PlatType.Small));
 
-        // ── Ganz oben in der Mitte (für Risikokämpfe) ────────────────────
-        _platforms.Add(new Platform( -90, -260,   180, 18, PlatType.Small));
+        _platforms.Add(new Platform( -90, -260,  180, 18, PlatType.Small));
 
-        // ── Kleine Trittbretter (verbinden Ebenen) ────────────────────────
-        _platforms.Add(new Platform(-390,   70,   110, 16, PlatType.Small));
-        _platforms.Add(new Platform( 280,   70,   110, 16, PlatType.Small));
+        _platforms.Add(new Platform(-390,   70,  110, 16, PlatType.Small));
+        _platforms.Add(new Platform( 280,   70,  110, 16, PlatType.Small));
     }
 
     void ResetRound()
     {
-        _p1 = new Player(1, new Vector2(-200, 160), new Color(80, 160, 255),
-                         Keys.A, Keys.D, Keys.W, Keys.S, Keys.LeftControl, Keys.LeftShift);
-        _p2 = new Player(2, new Vector2( 200, 160), new Color(255, 100, 80),
-                         Keys.Left, Keys.Right, Keys.Up, Keys.Down, Keys.RightControl, Keys.RightShift);
-        _state       = GameState.Playing;
-        _lastKillText = "";
-        _roundTime   = 90f;
-        _timerRunning = true;
+        _p1 = new Player(1, new Vector2(-200, 160), new Color(80, 160, 255));
+        _p2 = new Player(2, new Vector2( 200, 160), _enemyColor);
+        _state          = GameState.Playing;
+        _lastKillText   = "";
+        _roundTime      = 120f;
+        _timerRunning   = true;
         _roundOverTimer = 0f;
+        _syncTimer      = 2f;
         _particles.Clear();
     }
 
     void ResetMatch()
     {
-        _scoreP1 = 0; _scoreP2 = 0;
+        _scoreP1    = 0;
+        _scoreEnemy = 0;
         ResetRound();
     }
 
@@ -140,41 +141,156 @@ public class Game1 : Game
         _pixel.SetData(new[] { Color.White });
     }
 
+    protected override void OnExiting(object sender, ExitingEventArgs args)
+    {
+        Logger.Close();
+        base.OnExiting(sender, args);
+    }
+
     protected override void Update(GameTime gt)
     {
-        float dt = Math.Min((float)gt.ElapsedGameTime.TotalSeconds, 0.05f);
-        var keys = Keyboard.GetState();
+        try { UpdateInner(gt); }
+        catch (Exception ex)
+        {
+            Logger.LogException("Update", ex);
+            if (_p1 != null) Logger.Log($"P1 Pos={_p1.Pos} Vel={_p1.Vel} State={_p1.State}");
+            if (_p2 != null) Logger.Log($"P2 Pos={_p2.Pos} Vel={_p2.Vel} State={_p2.State}");
+            Logger.Log($"GameState={_state} Particles={_particles.Count}");
+            Logger.Close();
+            throw;
+        }
+    }
 
-        if (keys.IsKeyDown(Keys.Escape)) Exit();
+    void UpdateInner(GameTime gt)
+    {
+        float dt = Math.Min((float)gt.ElapsedGameTime.TotalSeconds, 0.05f);
+        var keys  = Keyboard.GetState();
+        var mouse = Mouse.GetState();
+        bool mouseClick = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
+
+        _mousePos = new Vector2(mouse.X, mouse.Y);
+
+        // Escape → immer zurück ins Menü, Spiel nie schließen
+        if (keys.IsKeyDown(Keys.Escape) && _state != GameState.Menu)
+        {
+            if (!_isLocalMode) { _net.Dispose(); _net = new GameNet(); }
+            _isLocalMode = false;
+            _state = GameState.Menu;
+        }
         if (KeyJustPressed(keys, Keys.F1)) _debugOpen = !_debugOpen;
 
-        if (_state == GameState.Playing)
+        if (_state == GameState.Menu)
         {
-            // ── Timer ──────────────────────────────────────────────────────
+            HandleMenuClick(mouseClick);
+        }
+        else if (_state == GameState.Lobby)
+        {
+            _net.Update(dt);
+            _net.ReceiveInput();
+
+            // Press Enter with 4-digit code → start searching
+            if (!_net.IsSeeking && KeyJustPressed(keys, Keys.Enter) && _codeInput.Length == 4)
+            {
+                if (int.TryParse(_codeInput, out int joinCode))
+                    _net.TryJoin(joinCode);
+            }
+
+            if (_net.Connected) ResetRound();
+        }
+        else if (_state == GameState.Playing)
+        {
             if (_timerRunning)
             {
                 _roundTime -= dt;
                 if (_roundTime <= 0f) { _roundTime = 0f; TimerExpired(); }
             }
 
-            _p1.Update(dt, keys, _prevKeys, _platforms, _p2, this);
-            _p2.Update(dt, keys, _prevKeys, _platforms, _p1, this);
-            CheckBlast(_p1); CheckBlast(_p2);
+            // P1: WASD + Mausklick (Angriff) + LCtrl (Dodge)
+            byte p1AimAngle = MouseAimAngle(_p1);
+            PlayerInput p1Local = PlayerInput.FromKeyboard(keys, _prevKeys, mouseClick, p1AimAngle,
+                Keys.A, Keys.D, Keys.W, Keys.S, Keys.LeftControl);
+
+            PlayerInput p1Input, p2Input;
+            if (_isLocalMode)
+            {
+                // P2 = Bot
+                p1Input = p1Local;
+                p2Input = _bot.Update(dt, _p2, _p1);
+            }
+            else
+            {
+                // Multiplayer via Netz
+                byte p2AimAngle = MouseAimAngle(_p2);
+                PlayerInput p2Local = PlayerInput.FromKeyboard(keys, _prevKeys, mouseClick, p2AimAngle,
+                    Keys.A, Keys.D, Keys.W, Keys.S, Keys.LeftControl);
+
+                _net.Update(dt);
+                PlayerInput myInput = _net.Role == NetRole.Host ? p1Local : p2Local;
+                _net.SendInput(myInput);
+                PlayerInput remote = _net.ReceiveInput();
+                p1Input = _net.Role == NetRole.Host ? p1Local : remote;
+                p2Input = _net.Role == NetRole.Host ? remote  : p2Local;
+
+                if (_net.ConsumePendingSync(out var syncData))
+                    ApplySyncFromBytes(syncData);
+
+                // Hit-Event vom anderen Gerät empfangen und anwenden
+                if (_net.ConsumePendingHit(out int hitTarget, out Vector2 hitVel,
+                                           out float hitDmg, out float hitHistun))
+                {
+                    var victim = hitTarget == 1 ? _p1 : _p2;
+                    if (!victim.Invincible && victim.Hitstun <= 0)
+                    {
+                        victim.Vel     = hitVel;
+                        victim.Damage += hitDmg;
+                        victim.Hitstun = hitHistun;
+                        victim.SX = 0.62f; victim.SY = 1.42f;
+                        SpawnHitFlash(new Vector2(victim.Pos.X, victim.Pos.Y - Player.H / 2f),
+                                      victim.Color, hitDmg >= 15f);
+                        AddShake(hitDmg >= 15f ? 7f : 3.5f);
+                    }
+                }
+
+                // Beide Seiten senden ihren eigenen Spielerzustand alle 0.1s
+                _syncTimer -= dt;
+                if (_syncTimer <= 0f)
+                {
+                    _net.SendStateSync(
+                        _p1.Pos, _p1.Vel, _p1.Damage, _p1.Stocks,
+                        _p2.Pos, _p2.Vel, _p2.Damage, _p2.Stocks,
+                        _scoreP1, _scoreEnemy);
+                    _syncTimer = 0.1f;
+                }
+
+                // OnHitLanded einmalig setzen (neue Spielerinstanzen nach ResetRound haben null)
+                if (_p1.OnHitLanded == null)
+                {
+                    _p1.OnHitLanded = (v, vel, dmg, hs) => _net.SendHit(v.Id, vel, dmg, hs);
+                    _p2.OnHitLanded = (v, vel, dmg, hs) => _net.SendHit(v.Id, vel, dmg, hs);
+                }
+            }
+
+            // Host: p1 ist lokal → p1 Hits autoritativ; p2 Hits kommen als Hit-Event vom Client
+            // Client: p2 ist lokal → p2 Hits autoritativ; p1 Hits kommen als Hit-Event vom Host
+            bool p1Auth = _isLocalMode || _net.Role == NetRole.Host;
+            bool p2Auth = _isLocalMode || _net.Role == NetRole.Client;
+            _p1.Update(dt, p1Input, _platforms, _p2, this, p1Auth);
+            _p2.Update(dt, p2Input, _platforms, _p1, this, p2Auth);
+            CheckBlast(_p1);
+            CheckBlast(_p2);
+            if (_killTextTimer > 0f) { _killTextTimer -= dt; if (_killTextTimer <= 0f) _lastKillText = ""; }
         }
         else if (_state == GameState.RoundOver)
         {
             _roundOverTimer -= dt;
-            if (_roundOverTimer <= 0f)
-            {
-                if (_scoreP1 >= SCORE_TO_WIN || _scoreP2 >= SCORE_TO_WIN)
-                    _state = GameState.GameOver;
-                else
-                    ResetRound();
-            }
+            if (_roundOverTimer <= 0f) ResetRound();
         }
 
         if (_state == GameState.GameOver && KeyJustPressed(keys, Keys.R))
+        {
             ResetMatch();
+            _state = GameState.Menu;
+        }
 
         for (int i = _particles.Count - 1; i >= 0; i--)
         { _particles[i].Update(dt); if (!_particles[i].Alive) _particles.RemoveAt(i); }
@@ -185,65 +301,111 @@ public class Game1 : Game
         _fpsTimer += dt;
         if (_fpsTimer >= 0.5f) { _fps = _fpsFrames / _fpsTimer; _fpsFrames = 0; _fpsTimer = 0f; }
 
-        _prevKeys = keys;
+        _prevKeys  = keys;
+        _prevMouse = mouse;
         base.Update(gt);
+    }
+
+    void OnTextInput(object sender, TextInputEventArgs e)
+    {
+        if (_state != GameState.Lobby) return;
+        if (_net.IsSeeking) return;  // locked once searching
+        char c = e.Character;
+        if (c == '\b' && _codeInput.Length > 0)
+            _codeInput = _codeInput[..^1];
+        else if (char.IsDigit(c) && _codeInput.Length < 4)
+            _codeInput += c;
+    }
+
+    void ApplySyncFromBytes(byte[] d)
+    {
+        if (d == null || d.Length < 40 || _p1 == null || _p2 == null) return;
+        int i = 2;
+        float RF() { float v = BitConverter.ToSingle(d, i); i += 4; return v; }
+        float ax = RF(), ay = RF(), avx = RF(), avy = RF();
+        byte p1Dmg = d[i++]; byte p1Stocks = d[i++];
+        float bx = RF(), by = RF(), bvx = RF(), bvy = RF();
+        byte p2Dmg = d[i++]; byte p2Stocks = d[i++];
+        int sP1 = d[i++]; int sP2 = d[i];
+
+        if (_net.Role == NetRole.Host)
+        {
+            // Empfangen vom Client: nur p2 (der Spieler des Clients) korrigieren
+            _p2.Pos = Vector2.Lerp(_p2.Pos, new Vector2(bx, by), 0.6f);
+            _p2.Vel = Vector2.Lerp(_p2.Vel, new Vector2(bvx, bvy), 0.5f);
+            _p2.Damage = p2Dmg;
+            _p2.Stocks = p2Stocks;
+        }
+        else
+        {
+            // Empfangen vom Host: nur p1 (der Spieler des Hosts) korrigieren
+            _p1.Pos = Vector2.Lerp(_p1.Pos, new Vector2(ax, ay), 0.6f);
+            _p1.Vel = Vector2.Lerp(_p1.Vel, new Vector2(avx, avy), 0.5f);
+            _p1.Damage = p1Dmg;
+            _p1.Stocks = p1Stocks;
+            _scoreP1    = sP1;
+            _scoreEnemy = sP2;
+        }
     }
 
     void TimerExpired()
     {
         _timerRunning = false;
-        // Wer mehr Stocks hat gewinnt; bei Gleichstand P1
-        if (_p1.Stocks > _p2.Stocks)      AwardRound(1);
-        else if (_p2.Stocks > _p1.Stocks) AwardRound(2);
-        else                               AwardRound(1); // Tie → P1
+        if      (_scoreP1 > _scoreEnemy) EndGame(1);
+        else if (_scoreEnemy > _scoreP1) EndGame(2);
+        else                             EndGame(0);
     }
 
-    void AwardRound(int winner)
+    void EndGame(int winner)
     {
         _roundWinner = winner;
-        if (winner == 1) _scoreP1++; else _scoreP2++;
-        _lastKillText = winner == 1 ? "P1 WINS ROUND!" : "P2 WINS ROUND!";
-        _state = GameState.RoundOver;
-        _roundOverTimer = ROUND_OVER_DELAY;
-        _timerRunning = false;
+        _state       = GameState.GameOver;
     }
 
     void CheckBlast(Player p)
     {
-        if (p.Dead) return;
+        // Spieler gerade gespawnt (InvTime frisch = 2f) → kein Doppelwertung
+        if (p.Dead || p.InvTime > 1.8f) return;
         if (p.Pos.X < BL || p.Pos.X > BR || p.Pos.Y < BT || p.Pos.Y > BB)
         {
-            Player killer = p == _p1 ? _p2 : _p1;
-            _lastKillText = $"P{killer.Id} KO'd P{p.Id}!  ({(int)p.Damage}%)";
-            SpawnBurst(p.Pos, p.Color, 50);
-            AddShake(10f);
-            p.LoseStock();
-            if (p.Stocks > 0)
-            {
-                p.Respawn();
-            }
-            else
-            {
-                // letzten Stock verloren → Runde zuerkannt
-                AwardRound(killer.Id);
-            }
+            SpawnBurst(p.Pos, p.Color, 40);
+            AddShake(8f);
+
+            int winner = p.Id == 1 ? 2 : 1;
+            if (winner == 1) _scoreP1++;
+            else             _scoreEnemy++;
+
+            _lastKillText  = winner == 1 ? "P1 SCORES!" : "P2 SCORES!";
+            _killTextTimer = 2.5f;
+
+            if (_scoreP1 >= SCORE_TO_WIN)    { p.Dead = true; EndGame(1); return; }
+            if (_scoreEnemy >= SCORE_TO_WIN) { p.Dead = true; EndGame(2); return; }
+
+            p.Respawn();
         }
     }
 
     void UpdateCamera(float dt)
     {
-        Vector2 mid = (_p1.Pos + _p2.Pos) * 0.5f;
-        _camPos += (mid - _camPos) * 5f * dt;
-        float dist = Vector2.Distance(_p1.Pos, _p2.Pos);
-        float tz = MathHelper.Clamp(750f / (dist + 480f), 0.45f, 1.05f);
+        Vector2 target = _p1 != null && _p2 != null
+            ? (_p1.Pos + _p2.Pos) * 0.5f
+            : _p1?.Pos ?? Vector2.Zero;
+        _camPos += (target - _camPos) * 5f * dt;
+
+        float tz = 1.2f;
+        if (_p1 != null && _p2 != null)
+        {
+            float sep = Vector2.Distance(_p1.Pos, _p2.Pos);
+            tz = MathHelper.Clamp(1.2f - sep / 2200f, 0.55f, 1.2f);
+        }
         _camZoom += (tz - _camZoom) * 3f * dt;
+
         if (_camShake > 0f)
         {
             _camShake -= dt * 22f;
-            var r = new Random();
             _camShakeOffset = new Vector2(
-                (float)(r.NextDouble() * 2 - 1) * _camShake,
-                (float)(r.NextDouble() * 2 - 1) * _camShake);
+                (float)(_rng.NextDouble() * 2 - 1) * _camShake,
+                (float)(_rng.NextDouble() * 2 - 1) * _camShake);
         }
         else { _camShake = 0f; _camShakeOffset = Vector2.Zero; }
     }
@@ -251,20 +413,46 @@ public class Game1 : Game
     public void AddShake(float a) => _camShake = Math.Max(_camShake, a);
 
     public void SpawnHit(Vector2 pos, Color col, int n)  => SpawnBurst(pos, col, n);
-    public void SpawnBurst(Vector2 pos, Color col, int n)
+
+    // Sichtbarer Treffereffekt: farbige Partikel + weißer Flash
+    public void SpawnHitFlash(Vector2 pos, Color col, bool heavy)
     {
-        var r = new Random();
-        for (int i = 0; i < n; i++)
+        int n = heavy ? 28 : 15;
+        SpawnBurst(pos, col, n);
+        int flashCount = heavy ? 10 : 5;
+        for (int i = 0; i < flashCount; i++)
         {
-            float a    = (float)(r.NextDouble() * MathHelper.TwoPi);
-            float s    = (float)(r.NextDouble() * 400 + 60);
-            float life = (float)(r.NextDouble() * 0.5f + 0.15f);
+            float a    = (float)(_rng.NextDouble() * MathHelper.TwoPi);
+            float s    = (float)(_rng.NextDouble() * 250 + 80);
             _particles.Add(new Particle(pos,
-                new Vector2(MathF.Cos(a), MathF.Sin(a)) * s, col, life, (float)(r.NextDouble() * 5 + 2)));
+                new Vector2(MathF.Cos(a), MathF.Sin(a)) * s,
+                Color.White, heavy ? 0.22f : 0.14f, heavy ? 9f : 6f));
         }
     }
 
-    // ── Camera transform ──────────────────────────────────────────────────
+    public void SpawnBurst(Vector2 pos, Color col, int n)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            float a    = (float)(_rng.NextDouble() * MathHelper.TwoPi);
+            float s    = (float)(_rng.NextDouble() * 400 + 60);
+            float life = (float)(_rng.NextDouble() * 0.5f + 0.15f);
+            _particles.Add(new Particle(pos,
+                new Vector2(MathF.Cos(a), MathF.Sin(a)) * s, col, life, (float)(_rng.NextDouble() * 5 + 2)));
+        }
+    }
+
+    // Aim-Winkel aus Mausposition relativ zum Spieler (Multiplayer)
+    byte MouseAimAngle(Player p)
+    {
+        Vector2 pScreen = W2S(p.Pos);
+        float dx = _mousePos.X - pScreen.X;
+        float dy = _mousePos.Y - pScreen.Y;
+        if (dx == 0f && dy == 0f) dx = 1f;
+        float angle = MathF.Atan2(dy, dx);
+        return (byte)((int)((angle / (MathF.PI * 2f) + 1f) * 256f) & 0xFF);
+    }
+
     int GameStartX => _debugOpen ? DEBUG_W : 0;
     int GameW      => SW - GameStartX;
 
@@ -277,23 +465,34 @@ public class Game1 : Game
     bool KeyJustPressed(KeyboardState cur, Keys k) =>
         cur.IsKeyDown(k) && !_prevKeys.IsKeyDown(k);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // DRAW
-    // ═══════════════════════════════════════════════════════════════════════
     protected override void Draw(GameTime gt)
     {
         GraphicsDevice.Clear(new Color(18, 20, 35));
         _spriteBatch.Begin();
 
-        DrawBackground();
-        foreach (var p in _platforms) DrawPlatform(p);
-        foreach (var p in _particles) DrawParticle(p);
-        DrawPlayer(_p1); DrawPlayer(_p2);
-        if (_debugOpen) { DrawAttackHitbox(_p1); DrawAttackHitbox(_p2); }
-        DrawHUD();
-        if (_state == GameState.RoundOver) DrawRoundOver();
-        if (_state == GameState.GameOver)  DrawGameOver();
-        if (_debugOpen) DrawDebug();
+        if (_state == GameState.Menu)
+        {
+            DrawMenu();
+        }
+        else if (_state == GameState.Lobby)
+        {
+            DrawLobby();
+        }
+        else
+        {
+            DrawBackground();
+            foreach (var p in _platforms) DrawPlatform(p);
+            foreach (var p in _particles) DrawParticle(p);
+            DrawPlayer(_p1);
+            DrawPlayer(_p2);
+            DrawAttackAnim(_p1);
+            DrawAttackAnim(_p2);
+            if (_debugOpen) { DrawAttackHitbox(_p1); DrawAttackHitbox(_p2); }
+            DrawHUD();
+            if (_state == GameState.RoundOver) DrawRoundOver();
+            if (_state == GameState.GameOver)  DrawGameOver();
+            if (_debugOpen) DrawDebug();
+        }
 
         _spriteBatch.End();
         base.Draw(gt);
@@ -305,13 +504,7 @@ public class Game1 : Game
         for (int x = GameStartX; x < SW; x += 80) R(x, 0, 1, SH, new Color(27, 30, 50));
         for (int y = 0; y < SH; y += 80)           R(GameStartX, y, GameW, 1, new Color(27, 30, 50));
 
-        // Hintergrund-Gradient-Böden (atmosphärisch)
-        for (int i = 0; i < 6; i++)
-        {
-            int a = 8 - i;
-            R(GameStartX, SH - 120 + i * 20, GameW, 20, new Color(30, 35, 70, a));
-        }
-        Txt("BRAWLHAVEN", GameStartX + 10, 10, new Color(45, 50, 80));
+        Txt($"BRAWLHAVEN [{_net.Role}]", GameStartX + 10, 10, new Color(45, 50, 80));
 
         string fpsStr = $"FPS {(int)_fps}";
         Color fpsCol  = _fps >= 55 ? new Color(80, 220, 100)
@@ -338,24 +531,18 @@ public class Game1 : Game
                 edge = new Color(95, 112, 175);
                 bot  = new Color(0, 0, 0, 60);
                 break;
-            default: // Small
+            default:
                 body = new Color(40, 46, 78);
                 edge = new Color(78, 95, 155);
                 bot  = new Color(0, 0, 0, 50);
                 break;
         }
 
-        // Schatten
         R((int)s.X + 4, (int)s.Y + 5, w, h, new Color(0, 0, 0, 60));
-        // Körper
         R((int)s.X, (int)s.Y, w, h, body);
-        // Innere Füllung leicht heller
         R((int)s.X + 2, (int)s.Y + 2, w - 4, h - 4, new Color(body.R + 10, body.G + 10, body.B + 12, 255));
-        // Oberkante (Highlight)
         R((int)s.X, (int)s.Y, w, Math.Max(2, (int)(3 * _camZoom)), edge);
-        // Unterkante (Schatten)
         R((int)s.X, (int)s.Y + h - 2, w, 2, bot);
-        // Seitliche Linien
         R((int)s.X, (int)s.Y, 1, h, new Color((int)edge.R, (int)edge.G, (int)edge.B, 60));
         R((int)s.X + w - 1, (int)s.Y, 1, h, new Color(0, 0, 0, 40));
     }
@@ -373,40 +560,52 @@ public class Game1 : Game
 
     void DrawPlayer(Player p)
     {
-        if (p.Dead) return;
+        if (p == null || p.Dead) return;
         if (p.Invincible && (int)(p.InvTime * 18) % 2 == 0) return;
 
         var   feet = W2S(p.Pos);
         float z    = _camZoom;
-        Color col  = p.Hitstun > 0 ? Color.White : p.Color;
+        Color col  = p.Hitstun > 0  ? new Color(Math.Min(255, p.Color.R + 100),
+                                                Math.Min(255, p.Color.G + 100),
+                                                Math.Min(255, p.Color.B + 100))
+                   : p.State == "DODGE" ? new Color(Math.Min(255, p.Color.R + 80),
+                                                    Math.Min(255, p.Color.G + 80), 255, 220)
+                   : p.Color;
 
         int cx  = (int)feet.X;
         int fy  = (int)feet.Y;
 
-        int rx = Math.Max(3, (int)(22f * z * p.SX));
-        int ry = Math.Max(3, (int)(19f * z * p.SY));
-
+        int baseR = Math.Max(3, (int)(25f * z));
         float wobble = MathF.Sin(p.WalkTimer * 2.2f) * 1.8f * z;
-        rx = Math.Max(3, (int)(rx + wobble));
-        ry = Math.Max(3, (int)(ry - wobble * 0.6f));
+        int rx = Math.Max(3, (int)(baseR * p.SX) + (int)wobble);
+        int ry = Math.Max(3, (int)(baseR * p.SY) - (int)(wobble * 0.6f));
 
         int bcy = fy - ry;
 
-        R(cx - rx, fy, rx * 2, Math.Max(1, (int)(5 * z)), new Color(0, 0, 0, 40));
-        DrawEllipse(cx, bcy, rx, ry, new Color(0, 0, 0, 65), 3, 3);
+        DrawEllipse(cx, fy, rx, Math.Max(1, (int)(5 * z)), new Color(0, 0, 0, 50), 4, 4);
+        DrawEllipse(cx, bcy, rx, ry, new Color(0, 0, 0, 70), 4, 4);
         DrawEllipse(cx, bcy, rx, ry, col);
+        DrawEllipse(cx, bcy + ry / 3, Math.Max(1, rx - (int)(3*z)), Math.Max(1, ry / 2),
+                    new Color(0, 0, 0, 30));
 
-        // Augen
-        int es        = Math.Max(2, (int)(4.5f * z));
-        int eyeY      = bcy - ry / 6;
-        int eyeSpread = Math.Max(2, rx / 3);
-        int pupilOff  = p.FacingRight ? Math.Max(1, (int)(1.2f * z)) : -Math.Max(1, (int)(1.2f * z));
-        int ps        = Math.Max(1, es / 2);
+        int hlRx = Math.Max(1, (int)(rx * 0.42f));
+        int hlRy = Math.Max(1, (int)(ry * 0.35f));
+        DrawEllipse(cx - (int)(rx * 0.25f), bcy - (int)(ry * 0.32f), hlRx, hlRy,
+                    new Color(255, 255, 255, 60));
+
+        int es        = Math.Max(3, (int)(6f * z));
+        int eyeY      = bcy - (int)(ry * 0.18f);
+        int eyeSpread = Math.Max(3, (int)(rx * 0.40f));
+        int pupilOff  = p.FacingRight ? Math.Max(1, (int)(1.5f * z)) : -Math.Max(1, (int)(1.5f * z));
+        int ps        = Math.Max(1, (int)(es * 0.55f));
+        int ss        = Math.Max(1, ps / 2);
 
         DrawEllipse(cx - eyeSpread, eyeY, es, es, Color.White);
         DrawEllipse(cx + eyeSpread, eyeY, es, es, Color.White);
-        DrawEllipse(cx - eyeSpread + pupilOff, eyeY + Math.Max(1, (int)z), ps, ps, new Color(15, 30, 100));
-        DrawEllipse(cx + eyeSpread + pupilOff, eyeY + Math.Max(1, (int)z), ps, ps, new Color(15, 30, 100));
+        DrawEllipse(cx - eyeSpread + pupilOff, eyeY + Math.Max(1, (int)(z * 0.6f)), ps, ps, new Color(15, 30, 110));
+        DrawEllipse(cx + eyeSpread + pupilOff, eyeY + Math.Max(1, (int)(z * 0.6f)), ps, ps, new Color(15, 30, 110));
+        DrawEllipse(cx - eyeSpread + pupilOff - 1, eyeY - 1, ss, ss, new Color(255, 255, 255, 210));
+        DrawEllipse(cx + eyeSpread + pupilOff - 1, eyeY - 1, ss, ss, new Color(255, 255, 255, 210));
 
         if (p.Hitstun > 0)
         {
@@ -415,7 +614,6 @@ public class Game1 : Game
             R(cx - mw / 2, my, mw, Math.Max(1, (int)(1.5f * z)), new Color(0, 0, 0, 130));
         }
 
-        // Damage % über Slime
         float pct = p.Damage;
         Color dc  = pct < 50 ? new Color(100, 220, 100) : pct < 100 ? new Color(255, 200, 50) : new Color(255, 70, 70);
         TxtBig($"{(int)pct}%", cx - 12, bcy - ry - 30, dc);
@@ -439,17 +637,18 @@ public class Game1 : Game
 
     void DrawAttackHitbox(Player p)
     {
-        if (!p.AttackActive) return;
-        var s = W2S(new Vector2(p.HitboxWorld.X, p.HitboxWorld.Y));
-        int w = (int)(p.HitboxWorld.Width  * _camZoom);
-        int h = (int)(p.HitboxWorld.Height * _camZoom);
-        Color fill = p.IsHeavy ? new Color(255, 100, 50, 55) : new Color(255, 220, 50, 55);
+        if (p == null || !p.AttackActive) return;
+        if (p.AtkTimer <= (Player.ATK_DUR - Player.ATK_HITBOX_DUR)) return;
+        Vector2 center = W2S(p.HitboxCenter);
+        float   w = p.HitboxHalfW * 2f * _camZoom;
+        float   h = p.HitboxHalfH * 2f * _camZoom;
+        Color fill = p.IsHeavy ? new Color(255, 100, 50, 55)  : new Color(255, 220, 50, 55);
         Color edge = p.IsHeavy ? new Color(255, 130, 60, 210) : new Color(255, 230, 60, 210);
-        R((int)s.X, (int)s.Y, w, h, fill);
-        R((int)s.X, (int)s.Y, w, 1, edge);
-        R((int)s.X, (int)s.Y + h - 1, w, 1, edge);
-        R((int)s.X, (int)s.Y, 1, h, edge);
-        R((int)s.X + w - 1, (int)s.Y, 1, h, edge);
+        var origin = new Vector2(0.5f, 0.5f);
+        _spriteBatch.Draw(_pixel, center, null, edge, p.HitboxAngle,
+            origin, new Vector2(w + 3, h + 3), SpriteEffects.None, 0f);
+        _spriteBatch.Draw(_pixel, center, null, fill, p.HitboxAngle,
+            origin, new Vector2(w, h), SpriteEffects.None, 0f);
     }
 
     void DrawParticle(Particle p)
@@ -460,50 +659,37 @@ public class Game1 : Game
         R((int)s.X - sz/2, (int)s.Y - sz/2, sz, sz, new Color(p.Col.R, p.Col.G, p.Col.B, a));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // HUD  –  Score oben mittig + Timer
-    // ═══════════════════════════════════════════════════════════════════════
     void DrawHUD()
     {
         int cx = GameStartX + GameW / 2;
         int hudY = 18;
 
-        // ── Timer (Mitte oben) ─────────────────────────────────────────────
         int mins = (int)(_roundTime / 60f);
         int secs = (int)(_roundTime % 60f);
         string timeStr = $"{mins}:{secs:D2}";
         Color timeCol = _roundTime > 30f ? new Color(200, 205, 240)
                       : _roundTime > 10f ? new Color(255, 200, 50)
                                          : new Color(255, 70, 70);
-        // Timer-Hintergrundpanel
         int tpW = 90, tpH = 28;
         R(cx - tpW/2 - 4, hudY - 4, tpW + 8, tpH + 8, new Color(0, 0, 0, 140));
         R(cx - tpW/2 - 2, hudY - 2, tpW + 4, tpH + 4, new Color(35, 40, 68));
         TxtBig(timeStr, cx - timeStr.Length * 6, hudY + 4, timeCol);
 
-        // ── P1 Score (links vom Timer) ────────────────────────────────────
-        int scoreOffX = 160;
-        DrawScoreBlock(cx - scoreOffX - 80, hudY, _scoreP1, _p1.Color, "P1", true);
+        DrawScoreBlock(cx - 59 - 130, hudY, _scoreP1,    _p1.Color,  "P1", true);
+        DrawScoreBlock(cx + 59,       hudY, _scoreEnemy, _p2.Color,  "P2", false);
 
-        // ── P2 Score (rechts vom Timer) ───────────────────────────────────
-        DrawScoreBlock(cx + scoreOffX,       hudY, _scoreP2, _p2.Color, "P2", false);
-
-        // ── Kill-Text ─────────────────────────────────────────────────────
         if (_lastKillText != "")
             Txt(_lastKillText, cx - _lastKillText.Length * 3, hudY + 48, new Color(255, 190, 80));
     }
 
     void DrawScoreBlock(int x, int y, int score, Color col, string label, bool leftAlign)
     {
-        // Panel
         int pw = 130, ph = 36;
         R(x - 2, y - 2, pw + 4, ph + 4, new Color(0, 0, 0, 140));
         R(x,     y,     pw,     ph,     new Color(22, 26, 45));
 
-        // Label
         Txt(label, leftAlign ? x + 6 : x + pw - 20, y + 4, col);
 
-        // Score-Punkte als Kreise
         int dotR = 7, gap = 20;
         int dotStartX = leftAlign ? x + 30 : x + 8;
         for (int i = 0; i < SCORE_TO_WIN; i++)
@@ -522,25 +708,25 @@ public class Game1 : Game
     {
         R(0, 0, SW, SH, new Color(0, 0, 0, 110));
         int cx = GameStartX + GameW / 2;
-        Color wc = _roundWinner == 1 ? _p1.Color : _p2.Color;
-        TxtBig($"P{_roundWinner} WINS ROUND!", cx - 150, SH/2 - 22, wc);
-        string scoreStr = $"SCORE  P1 {_scoreP1} - {_scoreP2} P2";
-        Txt(scoreStr, cx - scoreStr.Length * 3, SH/2 + 18, new Color(180, 185, 215));
+        TxtBig("ROUND OVER", cx - 90, SH/2 - 22, new Color(200, 205, 255));
     }
 
     void DrawGameOver()
     {
         R(0, 0, SW, SH, new Color(0, 0, 0, 175));
         int cx = GameStartX + GameW / 2;
-        Color wc = _scoreP1 >= SCORE_TO_WIN ? _p1.Color : _p2.Color;
-        int   pw = _scoreP1 >= SCORE_TO_WIN ? 1 : 2;
-        TxtBig($"PLAYER {pw} WINS!", cx - 110, SH/2 - 36, wc);
-        string scoreStr = $"FINAL  P1 {_scoreP1} - {_scoreP2} P2";
-        Txt(scoreStr, cx - scoreStr.Length * 3, SH/2 + 6, new Color(180, 185, 215));
-        Txt("[R] REMATCH", cx - 46, SH/2 + 34, new Color(180, 185, 210));
+        if (_roundWinner == 0)
+        {
+            TxtBig("UNENTSCHIEDEN", cx - 104, SH/2 - 36, new Color(200, 200, 100));
+        }
+        else
+        {
+            Color wc = _roundWinner == 1 ? _p1.Color : _p2.Color;
+            TxtBig($"PLAYER {_roundWinner} WINS!", cx - 110, SH/2 - 36, wc);
+        }
+        Txt("[R] MENU", cx - 36, SH/2 + 18, new Color(180, 185, 210));
     }
 
-    // ── DEBUG PANEL ───────────────────────────────────────────────────────
     void DrawDebug()
     {
         R(0, 0, DEBUG_W, SH, new Color(11, 13, 22, 245));
@@ -565,59 +751,237 @@ public class Game1 : Game
         RowF("Shake", _camShake, _camShake > 0.5f ? new Color(255,200,80) : Color.White);
         Row ("FPS",   $"{(int)_fps}", _fps >= 55 ? new Color(80,220,100) : _fps >= 30 ? new Color(255,200,50) : new Color(255,70,70));
         Sep();
-        Lbl("PLAYER 1  WASD", _p1.Color);
-        RowF("Pos X",     _p1.Pos.X,  Color.White);
-        RowF("Pos Y",     _p1.Pos.Y,  Color.White);
-        RowF("Vel X",     _p1.Vel.X,  MathF.Abs(_p1.Vel.X)>10?new Color(255,200,80):Color.White);
-        RowF("Vel Y",     _p1.Vel.Y,  MathF.Abs(_p1.Vel.Y)>10?new Color(255,200,80):Color.White);
-        RowF("Damage",    _p1.Damage, _p1.Damage>100?new Color(255,80,80):new Color(100,220,100));
-        Row ("Stocks",    $"{_p1.Stocks}/{Player.MAX_STOCKS}", Color.White);
-        Row ("State",     _p1.State,  new Color(140,195,255));
-        Row ("Grounded",  _p1.Grounded?"YES":"NO", _p1.Grounded?new Color(100,220,100):new Color(255,150,80));
-        RowF("Hitstun",   _p1.Hitstun,  _p1.Hitstun>0?new Color(255,80,80):Color.White);
-        RowF("Dodge CD",  _p1.DodgeCD,  _p1.DodgeCD>0?new Color(255,200,80):Color.White);
-        RowF("Attack CD", _p1.AtkCD,    _p1.AtkCD>0?new Color(255,150,80):Color.White);
-        Row ("Invincible",_p1.Invincible?$"YES {_p1.InvTime:F1}s":"NO", _p1.Invincible?new Color(100,220,255):Color.White);
+        Lbl("PLAYER 1  WASD+LCtrl", _p1.Color);
+        RowF("Pos X",    _p1.Pos.X, Color.White);
+        RowF("Pos Y",    _p1.Pos.Y, Color.White);
+        RowF("Vel X",    _p1.Vel.X, MathF.Abs(_p1.Vel.X)>10?new Color(255,200,80):Color.White);
+        RowF("Vel Y",    _p1.Vel.Y, MathF.Abs(_p1.Vel.Y)>10?new Color(255,200,80):Color.White);
+        RowF("Damage",   _p1.Damage, _p1.Damage>100?new Color(255,80,80):new Color(100,220,100));
+        Row ("Stocks",   $"{_p1.Stocks}/{Player.MAX_STOCKS}", Color.White);
+        Row ("State",    _p1.State, new Color(140,195,255));
+        RowF("Dodge CD", _p1.DodgeCD, _p1.DodgeCD>0?new Color(255,200,80):Color.White);
         Sep();
-        Lbl("PLAYER 2  ARROWS", _p2.Color);
-        RowF("Pos X",     _p2.Pos.X,  Color.White);
-        RowF("Pos Y",     _p2.Pos.Y,  Color.White);
-        RowF("Vel X",     _p2.Vel.X,  MathF.Abs(_p2.Vel.X)>10?new Color(255,200,80):Color.White);
-        RowF("Vel Y",     _p2.Vel.Y,  MathF.Abs(_p2.Vel.Y)>10?new Color(255,200,80):Color.White);
-        RowF("Damage",    _p2.Damage, _p2.Damage>100?new Color(255,80,80):new Color(100,220,100));
-        Row ("Stocks",    $"{_p2.Stocks}/{Player.MAX_STOCKS}", Color.White);
-        Row ("State",     _p2.State,  new Color(255,175,150));
-        Row ("Grounded",  _p2.Grounded?"YES":"NO", _p2.Grounded?new Color(100,220,100):new Color(255,150,80));
-        RowF("Hitstun",   _p2.Hitstun,  _p2.Hitstun>0?new Color(255,80,80):Color.White);
-        RowF("Dodge CD",  _p2.DodgeCD,  _p2.DodgeCD>0?new Color(255,200,80):Color.White);
-        RowF("Attack CD", _p2.AtkCD,    _p2.AtkCD>0?new Color(255,150,80):Color.White);
-        Row ("Invincible",_p2.Invincible?$"YES {_p2.InvTime:F1}s":"NO", _p2.Invincible?new Color(100,220,255):Color.White);
+        Lbl("PLAYER 2  WASD+LCtrl", _p2.Color);
+        RowF("Pos X",   _p2.Pos.X, Color.White);
+        RowF("Pos Y",   _p2.Pos.Y, Color.White);
+        RowF("Vel X",   _p2.Vel.X, MathF.Abs(_p2.Vel.X)>10?new Color(255,200,80):Color.White);
+        RowF("Vel Y",   _p2.Vel.Y, MathF.Abs(_p2.Vel.Y)>10?new Color(255,200,80):Color.White);
+        RowF("Damage",  _p2.Damage, _p2.Damage>100?new Color(255,80,80):new Color(100,220,100));
+        Row ("Stocks",  $"{_p2.Stocks}/{Player.MAX_STOCKS}", Color.White);
+        Row ("State",   _p2.State, new Color(140,195,255));
         Sep();
         Lbl("MATCH", new Color(140,200,100));
-        Row("Score",      $"P1 {_scoreP1} - {_scoreP2} P2", Color.White);
-        Row("Timer",      $"{(int)(_roundTime/60)}:{(int)(_roundTime%60):D2}", Color.White);
-        Row("Particles",  _particles.Count.ToString(), Color.White);
-        Row("Game State", _state.ToString(), new Color(200,200,100));
+        Row("Score",     $"P1 {_scoreP1}  P2 {_scoreEnemy}", Color.White);
+        Row("Timer",     $"{(int)(_roundTime/60)}:{(int)(_roundTime%60):D2}", Color.White);
+        Row("Particles", _particles.Count.ToString(), Color.White);
+        Row("State",     _state.ToString(), new Color(200,200,100));
+        Row("Net",       _net.Role.ToString(), new Color(200,200,100));
         Sep();
-        Lbl("CONTROLS", new Color(140,200,100));
-        Row("P1 Move",  "A / D",       new Color(145,150,185));
-        Row("P1 Jump",  "W  (x2=DJ)",  new Color(145,150,185));
-        Row("P1 Light", "LCtrl",       new Color(145,150,185));
-        Row("P1 Heavy", "LShift",      new Color(145,150,185));
-        Row("P1 Dodge", "S + LCtrl",   new Color(145,150,185));
-        Sep();
-        Row("P2 Move",  "< / >",       new Color(145,150,185));
-        Row("P2 Jump",  "Up (x2=DJ)",  new Color(145,150,185));
-        Row("P2 Light", "RCtrl",       new Color(145,150,185));
-        Row("P2 Heavy", "RShift",      new Color(145,150,185));
-        Row("P2 Dodge", "Down+RCtrl",  new Color(145,150,185));
-        Sep();
-        Row("[F1]",  "Toggle Debug",   new Color(80,200,255));
-        Row("[R]",   "Rematch",        new Color(80,200,255));
-        Row("[ESC]", "Exit",           new Color(80,200,255));
+        Row("[F1]",  "Toggle Debug", new Color(80,200,255));
+        Row("[ESC]", "Menu",         new Color(80,200,255));
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // ── Menu ─────────────────────────────────────────────────────────────────
+
+    const int MENU_BW = 220, MENU_BH = 56, MENU_GAP = 22;
+
+    static readonly string[] _modeLabels = { "LOCAL VS BOT", "MULTIPLAYER" };
+    const int MENU_MODES = 2;
+
+    (int bx, int by) MenuButtonRect(int i)
+    {
+        int cx = SW / 2, cy = SH / 2;
+        int totalH = MENU_MODES * (MENU_BH + MENU_GAP) - MENU_GAP;
+        int startY  = cy - totalH / 2 + 30;
+        return (cx - MENU_BW / 2, startY + i * (MENU_BH + MENU_GAP));
+    }
+
+    void HandleMenuClick(bool click)
+    {
+        if (!click) return;
+        for (int i = 0; i < MENU_MODES; i++)
+        {
+            var (bx, by) = MenuButtonRect(i);
+            if (_mousePos.X >= bx && _mousePos.X <= bx + MENU_BW &&
+                _mousePos.Y >= by && _mousePos.Y <= by + MENU_BH)
+            {
+                if (i == 0)
+                {
+                    _isLocalMode = true;
+                    _bot         = new BotController();
+                    ResetMatch();
+                }
+                else
+                {
+                    _isLocalMode = false;
+                    _myCode      = new Random().Next(1000, 10000);
+                    _codeInput   = "";
+                    _net.Dispose();
+                    _net = new GameNet();
+                    _net.OpenLobby(_myCode);
+                    _state = GameState.Lobby;
+                }
+                break;
+            }
+        }
+    }
+
+    void DrawMenu()
+    {
+        R(0, 0, SW, SH, new Color(18, 20, 35));
+        for (int x = 0; x < SW; x += 80) R(x, 0, 1, SH, new Color(27, 30, 50));
+        for (int y = 0; y < SH; y += 80) R(0, y, SW, 1, new Color(27, 30, 50));
+
+        int cx = SW / 2, cy = SH / 2;
+
+        string title = "BRAWLHAVEN";
+        TxtBig(title, cx - title.Length * 6, cy - 140, new Color(100, 140, 255));
+
+        for (int i = 0; i < MENU_MODES; i++)
+        {
+            var (bx, by) = MenuButtonRect(i);
+            bool hover = _mousePos.X >= bx && _mousePos.X <= bx + MENU_BW &&
+                         _mousePos.Y >= by && _mousePos.Y <= by + MENU_BH;
+
+            Color bg     = hover ? new Color(50, 70, 130)  : new Color(26, 30, 58);
+            Color border = hover ? new Color(110, 150, 255) : new Color(50, 60, 100);
+            Color tc     = hover ? Color.White              : new Color(160, 170, 210);
+
+            R(bx + 3, by + 3, MENU_BW, MENU_BH, new Color(0, 0, 0, 60));
+            R(bx, by, MENU_BW, MENU_BH, bg);
+            R(bx, by, MENU_BW, 2, border);
+            R(bx, by + MENU_BH - 2, MENU_BW, 2, border);
+            R(bx, by, 2, MENU_BH, border);
+            R(bx + MENU_BW - 2, by, 2, MENU_BH, border);
+
+            string lbl = _modeLabels[i];
+            TxtBig(lbl, cx - lbl.Length * 6, by + MENU_BH / 2 - 7, tc);
+        }
+
+        string fps = $"FPS {(int)_fps}";
+        Txt(fps, SW - fps.Length * 6 - 10, 10, new Color(60, 70, 100));
+    }
+
+    // ── Multiplayer lobby ─────────────────────────────────────────────────────
+
+    void DrawLobby()
+    {
+        R(0, 0, SW, SH, new Color(18, 20, 35));
+        for (int x = 0; x < SW; x += 80) R(x, 0, 1, SH, new Color(27, 30, 50));
+        for (int y = 0; y < SH; y += 80) R(0, y, SW, 1, new Color(27, 30, 50));
+
+        int cx = SW / 2, cy = SH / 2;
+
+        TxtBig("MULTIPLAYER", cx - 66, cy - 200, new Color(100, 140, 255));
+
+        // ── Your code (top section) ───────────────────────────────────────
+        Txt("YOUR CODE", cx - 27, cy - 155, new Color(120, 130, 180));
+        string myCodeStr = _myCode.ToString();
+        TxtBig(myCodeStr, cx - myCodeStr.Length * 6, cy - 130, new Color(100, 220, 130));
+        Txt("SHARE THIS WITH A FRIEND", cx - 72, cy - 104, new Color(70, 80, 120));
+
+        // Divider
+        R(cx - 100, cy - 80, 200, 1, new Color(40, 48, 80));
+
+        // ── Join section (bottom section) ─────────────────────────────────
+        if (!_net.IsSeeking)
+        {
+            Txt("ENTER FRIEND'S CODE:", cx - 60, cy - 62, new Color(160, 170, 210));
+
+            // Input box
+            int bw = 108, bh = 30;
+            R(cx - bw/2 - 2, cy - 36, bw + 4, bh + 4, new Color(80, 140, 255, 120));
+            R(cx - bw/2,     cy - 34, bw,     bh,     new Color(22, 26, 45));
+            string display = _codeInput.PadRight(4, '_');
+            TxtBig(display, cx - bw/2 + 10, cy - 28, Color.White);
+
+            if (_codeInput.Length == 4)
+                Txt("[ENTER] SEARCH", cx - 42, cy + 12, new Color(100, 220, 100));
+            else
+                Txt("[TYPE 4 DIGITS]", cx - 45, cy + 12, new Color(70, 80, 120));
+        }
+        else
+        {
+            // Searching status
+            string status = $"SEARCHING FOR {_codeInput}...";
+            Txt(status, cx - status.Length * 3, cy - 50, new Color(255, 200, 50));
+            Txt("MAKE SURE YOUR FRIEND IS IN THE LOBBY", cx - 111, cy - 24, new Color(70, 80, 120));
+        }
+
+        // ── Always-visible: waiting indicator ────────────────────────────
+        R(cx - 100, cy + 40, 200, 1, new Color(40, 48, 80));
+        Txt("WAITING FOR FRIEND TO ENTER YOUR CODE",
+            cx - 111, cy + 50, new Color(60, 70, 110));
+
+        Txt("[ESC] BACK TO MENU", cx - 54, cy + 80, new Color(100, 110, 160));
+    }
+
+    // ── Attack animation ─────────────────────────────────────────────────────
+
+    void DrawAttackAnim(Player p)
+    {
+        if (p == null || !p.AttackActive) return;
+
+        var   feet = W2S(p.Pos);
+        float z    = _camZoom;
+        float t    = Math.Clamp(p.AtkTimer / Player.ATK_DUR, 0f, 1f);
+        byte  alpha = (byte)(t * 230 + 40);
+
+        Color col = new Color(
+            Math.Min(255, p.Color.R + 50),
+            Math.Min(255, p.Color.G + 50),
+            Math.Min(255, p.Color.B + 50),
+            (int)alpha);
+
+        var  aimD    = p.GetAtkAimDir();
+        int  bodyRx  = Math.Max(3, (int)(25f * z * p.SX));
+        int  bodyRy  = Math.Max(3, (int)(25f * z * p.SY));
+        int  bodyBcY = (int)feet.Y - bodyRy;
+
+        int armLen    = (int)(65f * z * t + 14f * z);
+        int armThick  = Math.Max(2, (int)(8f * z));
+        int armStartX = (int)feet.X  + (int)(aimD.X * bodyRx);
+        int armStartY = bodyBcY      + (int)(aimD.Y * bodyRy);
+        int armEndX   = armStartX    + (int)(aimD.X * armLen);
+        int armEndY   = armStartY    + (int)(aimD.Y * armLen);
+
+        // Arm als Kreis-Kette in beliebiger Richtung
+        int steps = Math.Max(4, armLen / 7);
+        for (int s = 0; s <= steps; s++)
+        {
+            float frac = (float)s / steps;
+            int px = armStartX + (int)(aimD.X * armLen * frac);
+            int py = armStartY + (int)(aimD.Y * armLen * frac);
+            DrawEllipse(px, py, armThick, armThick, col);
+        }
+
+        int fr = Math.Max(3, (int)(13f * z));
+        DrawEllipse(armEndX, armEndY, fr, fr, col);
+        DrawEllipse(armEndX, armEndY, Math.Max(1, fr / 2), Math.Max(1, fr / 2),
+                    new Color(255, 255, 255, (int)(alpha * 0.55f)));
+
+        // Energie-Funken am Angriffsende
+        if (t > 0.55f)
+        {
+            byte sa = (byte)((t - 0.55f) / 0.45f * 255);
+            Color spark = new Color(
+                Math.Min(255, p.Color.R + 80),
+                Math.Min(255, p.Color.G + 80),
+                Math.Min(255, p.Color.B + 80),
+                (int)sa);
+            int sr = (int)(20f * z);
+            R(armEndX - 2, armEndY - sr, 4, sr * 2, spark);
+            R(armEndX - sr, armEndY - 2, sr * 2, 4, spark);
+            DrawEllipse(armEndX, armEndY, Math.Max(1, (int)(sr * 0.55f)), Math.Max(1, (int)(sr * 0.55f)),
+                        new Color(Math.Min(255, p.Color.R + 80),
+                                  Math.Min(255, p.Color.G + 80),
+                                  Math.Min(255, p.Color.B + 80),
+                                  (int)sa / 3));
+        }
+    }
+
+    // ── Primitives ───────────────────────────────────────────────────────────
+
     void R(int x, int y, int w, int h, Color c)
     { if (w > 0 && h > 0) _spriteBatch.Draw(_pixel, new Rectangle(x, y, w, h), c); }
 
@@ -642,270 +1006,11 @@ public class Game1 : Game
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PLAYER
-// ═══════════════════════════════════════════════════════════════════════════
-public class Player
-{
-    public const float W = 42f, H = 58f;
-    public const int   MAX_STOCKS = 3;
-    public const float DODGE_CD   = 1.2f;
-    public const float GRAVITY    = 2100f;
-    public const float JUMP_F     = -790f;
-    public const float DJ_F       = -690f;
-    public const float SPEED      = 385f;
-
-    public int     Id;
-    public Vector2 Pos, Vel;
-    public Color   Color;
-    public float   Damage;
-    public int     Stocks = MAX_STOCKS;
-    public int     Jumps  = 2;
-    public bool    Grounded, FacingRight = true;
-    public float   Hitstun, DodgeCD, AtkCD, InvTime;
-    public bool    Invincible => InvTime > 0f;
-    public bool    Dead;
-    public float   SX = 1f, SY = 1f;
-    public float   WalkTimer;
-    public string  State = "IDLE";
-
-    public bool    AttackActive;
-    public float   AtkTimer;
-    public bool    IsHeavy;
-    public RectF   HitboxWorld;
-
-    Vector2 _spawn;
-    float   _coyote, _jBuf;
-    Keys    _kL, _kR, _kU, _kD, _kA, _kH;
-
-    public Player(int id, Vector2 spawn, Color col,
-                  Keys l, Keys r, Keys u, Keys d, Keys a, Keys h)
-    {
-        Id=id; Pos=_spawn=spawn; Color=col;
-        _kL=l; _kR=r; _kU=u; _kD=d; _kA=a; _kH=h;
-    }
-
-    public void LoseStock()  { Stocks--; Dead = Stocks <= 0; Damage = 0; }
-    public void ResetFull()  { Stocks = MAX_STOCKS; Respawn(); }
-    public void Respawn()
-    {
-        Pos=_spawn; Vel=Vector2.Zero; Damage=0;
-        Jumps=2; InvTime=2f; Hitstun=0;
-        SX=SY=1f; WalkTimer=0f; Dead=false; State="SPAWN";
-    }
-
-    public void Update(float dt, KeyboardState keys, KeyboardState prev,
-                       List<Platform> plats, Player other, Game1 game)
-    {
-        if (Dead) return;
-
-        bool l  = keys.IsKeyDown(_kL), r  = keys.IsKeyDown(_kR);
-        bool u  = keys.IsKeyDown(_kU), d  = keys.IsKeyDown(_kD);
-        bool a  = keys.IsKeyDown(_kA) && !prev.IsKeyDown(_kA);
-        bool hk = keys.IsKeyDown(_kH) && !prev.IsKeyDown(_kH);
-        bool uj = keys.IsKeyDown(_kU) && !prev.IsKeyDown(_kU);
-
-        if (InvTime > 0) InvTime -= dt;
-        if (DodgeCD > 0) DodgeCD -= dt;
-        if (AtkCD   > 0) AtkCD   -= dt;
-        if (Hitstun > 0) Hitstun -= dt;
-        SX += (1f-SX) * 14f*dt;
-        SY += (1f-SY) * 14f*dt;
-
-        if (MathF.Abs(Vel.X) > 20f && Grounded) WalkTimer += dt*9f;
-
-        if (AttackActive)
-        {
-            AtkTimer -= dt;
-            if (AtkTimer <= 0) { AttackActive = false; }
-            else
-            {
-                float hw = IsHeavy ? 85f : 58f, hh = IsHeavy ? 52f : 40f;
-                float hx = FacingRight ? Pos.X+W/2f : Pos.X-W/2f-hw;
-                float hy = Pos.Y - H*0.6f;
-                HitboxWorld = new RectF(hx, hy, hw, hh);
-
-                if (!other.Invincible && !other.Dead && !other.Hitstun.Equals(0)==false || true)
-                {
-                    var oBox = new RectF(other.Pos.X-W/2f, other.Pos.Y-H, W, H);
-                    if (HitboxWorld.Intersects(oBox) && other.Hitstun<=0 && !other.Invincible)
-                    {
-                        float dmg    = IsHeavy ? 19f : 8f;
-                        float kbBase = IsHeavy ? 620f : 360f;
-                        float kb     = kbBase * (1f + other.Damage/55f);
-                        float dir    = FacingRight ? 1f : -1f;
-                        other.Vel    = new Vector2(dir*kb, kb*(IsHeavy?-0.75f:-0.52f));
-                        other.Damage += dmg;
-                        other.Hitstun = IsHeavy ? 0.42f : 0.22f;
-                        other.SX=0.62f; other.SY=1.42f;
-                        game.SpawnHit(new Vector2(other.Pos.X, other.Pos.Y-H/2f), other.Color, IsHeavy?18:9);
-                        game.AddShake(IsHeavy?7f:3.5f);
-                        AttackActive=false;
-                    }
-                }
-            }
-        }
-
-        if (Hitstun > 0)
-        {
-            Vel.Y += GRAVITY*dt; Pos += Vel*dt;
-            DoPhysics(plats); UpdateState(); return;
-        }
-
-        float tVX = l ? -SPEED : r ? SPEED : 0f;
-        if (l) FacingRight=false;
-        if (r) FacingRight=true;
-
-        if (Grounded) Vel.X += (tVX-Vel.X)*0.88f;
-        else          Vel.X += (tVX-Vel.X)*dt*7f;
-
-        if (d && a && DodgeCD<=0 && Grounded)
-        {
-            float dir = r?1f:l?-1f:FacingRight?1f:-1f;
-            Vel.X=dir*950f; InvTime=0.32f; DodgeCD=DODGE_CD;
-            SX=dir>0?1.5f:0.65f; SY=0.65f;
-        }
-        else if (a && !AttackActive && AtkCD<=0)
-        {
-            AttackActive=true; IsHeavy=false; AtkTimer=0.18f; AtkCD=0.28f;
-            SX=FacingRight?1.32f:0.72f; SY=0.88f;
-        }
-        else if (hk && !AttackActive && AtkCD<=0)
-        {
-            AttackActive=true; IsHeavy=true; AtkTimer=0.30f; AtkCD=0.58f;
-            SX=FacingRight?1.52f:0.58f; SY=0.80f;
-        }
-
-        if (Grounded) _coyote=0.12f; else _coyote-=dt;
-        if (uj) _jBuf=0.10f;         else _jBuf-=dt;
-
-        if (uj)
-        {
-            if (_coyote>0f)
-            { Vel.Y=JUMP_F; Jumps=1; _coyote=0; _jBuf=0; SX=0.70f; SY=1.40f; }
-            else if (Jumps>0)
-            { Vel.Y=DJ_F; Jumps--; SX=0.70f; SY=1.40f;
-              game.SpawnHit(new Vector2(Pos.X,Pos.Y), new Color(160,210,255,160), 5); }
-        }
-
-        Vel.Y += GRAVITY*dt; Pos += Vel*dt;
-        DoPhysics(plats); UpdateState();
-    }
-
-    void DoPhysics(List<Platform> plats)
-    {
-        bool was=Grounded; Grounded=false;
-        foreach (var p in plats)
-        {
-            var pr = new RectF(Pos.X-W/2f, Pos.Y-H, W, H);
-            if (!pr.Intersects(new RectF(p.X,p.Y,p.W,p.H))) continue;
-            float oT=pr.Bottom-p.Y, oB=(p.Y+p.H)-pr.Top;
-            float oL=pr.Right-p.X,  oR=(p.X+p.W)-pr.Left;
-            float mn=Math.Min(Math.Min(oT,oB),Math.Min(oL,oR));
-            if      (mn==oT && Vel.Y>=0) { Pos.Y=p.Y;         Vel.Y=0; Grounded=true; Jumps=2; if(!was){SX=1.35f;SY=0.65f;} }
-            else if (mn==oB && Vel.Y<0)  { Pos.Y=p.Y+p.H+H;  Vel.Y=0; }
-            else if (mn==oL && Vel.X>0)  { Pos.X=p.X-W/2f;   Vel.X=0; }
-            else if (mn==oR && Vel.X<0)  { Pos.X=p.X+p.W+W/2f; Vel.X=0; }
-        }
-    }
-
-    void UpdateState()
-    {
-        if      (Hitstun>0)       State="HIT";
-        else if (AttackActive)    State=IsHeavy?"ATK-HEAVY":"ATK-LIGHT";
-        else if (Invincible && DodgeCD>DODGE_CD-0.38f) State="DODGE";
-        else if (!Grounded && Vel.Y<0) State=Jumps==0?"DJ":"JUMP";
-        else if (!Grounded)       State="FALL";
-        else if (MathF.Abs(Vel.X)>20) State="RUN";
-        else                      State="IDLE";
-    }
-}
-
-// ── Simple float rect ─────────────────────────────────────────────────────
-public struct RectF
-{
-    public float X,Y,W,H;
-    public float Left=>X; public float Right=>X+W;
-    public float Top=>Y;  public float Bottom=>Y+H;
-    public float Width=>W; public float Height=>H;
-    public RectF(float x,float y,float w,float h){X=x;Y=y;W=w;H=h;}
-    public bool Intersects(RectF o)=>Left<o.Right&&Right>o.Left&&Top<o.Bottom&&Bottom>o.Top;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PLATFORM / PARTICLE
-// ═══════════════════════════════════════════════════════════════════════════
-public enum PlatType { Main, Side, Small }
-public class Platform
-{
-    public float X,Y,W,H; public PlatType Type;
-    public Platform(float x,float y,float w,float h,PlatType t){X=x;Y=y;W=w;H=h;Type=t;}
-}
-public class Particle
-{
-    public Vector2 Pos,Vel; public Color Col; public float Life,MaxLife,Size;
-    public bool Alive=>Life>0;
-    public Particle(Vector2 p,Vector2 v,Color c,float l,float s){Pos=p;Vel=v;Col=c;Life=MaxLife=l;Size=s;}
-    public void Update(float dt){Pos+=Vel*dt;Vel*=0.88f;Life-=dt;}
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PIXEL FONT GLYPHS (5x7)
-// ═══════════════════════════════════════════════════════════════════════════
-public static class Glyphs
-{
-    public static readonly Dictionary<char, ulong> Map = new()
-    {
-        ['0']=0b_01110_10001_10011_10101_11001_10001_01110UL,
-        ['1']=0b_00100_01100_00100_00100_00100_00100_01110UL,
-        ['2']=0b_01110_10001_00001_00110_01000_10000_11111UL,
-        ['3']=0b_11110_00001_00001_01110_00001_00001_11110UL,
-        ['4']=0b_00010_00110_01010_10010_11111_00010_00010UL,
-        ['5']=0b_11111_10000_10000_11110_00001_00001_11110UL,
-        ['6']=0b_01110_10000_10000_11110_10001_10001_01110UL,
-        ['7']=0b_11111_00001_00010_00100_01000_01000_01000UL,
-        ['8']=0b_01110_10001_10001_01110_10001_10001_01110UL,
-        ['9']=0b_01110_10001_10001_01111_00001_00001_01110UL,
-        ['A']=0b_01110_10001_10001_11111_10001_10001_10001UL,
-        ['B']=0b_11110_10001_10001_11110_10001_10001_11110UL,
-        ['C']=0b_01110_10001_10000_10000_10000_10001_01110UL,
-        ['D']=0b_11100_10010_10001_10001_10001_10010_11100UL,
-        ['E']=0b_11111_10000_10000_11110_10000_10000_11111UL,
-        ['F']=0b_11111_10000_10000_11110_10000_10000_10000UL,
-        ['G']=0b_01110_10001_10000_10111_10001_10001_01111UL,
-        ['H']=0b_10001_10001_10001_11111_10001_10001_10001UL,
-        ['I']=0b_01110_00100_00100_00100_00100_00100_01110UL,
-        ['J']=0b_00111_00010_00010_00010_00010_10010_01100UL,
-        ['K']=0b_10001_10010_10100_11000_10100_10010_10001UL,
-        ['L']=0b_10000_10000_10000_10000_10000_10000_11111UL,
-        ['M']=0b_10001_11011_10101_10101_10001_10001_10001UL,
-        ['N']=0b_10001_11001_10101_10011_10001_10001_10001UL,
-        ['O']=0b_01110_10001_10001_10001_10001_10001_01110UL,
-        ['P']=0b_11110_10001_10001_11110_10000_10000_10000UL,
-        ['Q']=0b_01110_10001_10001_10001_10101_10010_01101UL,
-        ['R']=0b_11110_10001_10001_11110_10100_10010_10001UL,
-        ['S']=0b_01111_10000_10000_01110_00001_00001_11110UL,
-        ['T']=0b_11111_00100_00100_00100_00100_00100_00100UL,
-        ['U']=0b_10001_10001_10001_10001_10001_10001_01110UL,
-        ['V']=0b_10001_10001_10001_10001_10001_01010_00100UL,
-        ['W']=0b_10001_10001_10001_10101_10101_11011_10001UL,
-        ['X']=0b_10001_10001_01010_00100_01010_10001_10001UL,
-        ['Y']=0b_10001_10001_01010_00100_00100_00100_00100UL,
-        ['Z']=0b_11111_00001_00010_00100_01000_10000_11111UL,
-        [' ']=0b_00000_00000_00000_00000_00000_00000_00000UL,
-        ['%']=0b_11000_11001_00010_00100_01000_10011_00011UL,
-        ['.']=0b_00000_00000_00000_00000_00000_00000_00110UL,
-        ['-']=0b_00000_00000_00000_11111_00000_00000_00000UL,
-        ['!']=0b_00100_00100_00100_00100_00100_00000_00100UL,
-        ['/']=0b_00001_00010_00010_00100_01000_01000_10000UL,
-        ['<']=0b_00001_00010_00100_01000_00100_00010_00001UL,
-        ['>']=0b_10000_01000_00100_00010_00100_01000_10000UL,
-        ['(']=0b_00010_00100_01000_01000_01000_00100_00010UL,
-        [')']=0b_01000_00100_00010_00010_00010_00100_01000UL,
-        ['+']=0b_00000_00100_00100_11111_00100_00100_00000UL,
-        [':']=0b_00000_00110_00110_00000_00110_00110_00000UL,
-        ['[']=0b_01110_01000_01000_01000_01000_01000_01110UL,
-        [']']=0b_01110_00010_00010_00010_00010_00010_01110UL,
-        ['#']=0b_01010_01010_11111_01010_11111_01010_01010UL,
-    };
-}
+// Moved to separate files:
+//   Player      → Entities/Player.cs
+//   RectF       → Core/RectF.cs
+//   PlayerInput → Core/PlayerInput.cs
+//   GameNet     → Net/GameNet.cs
+//   Platform    → World/Platform.cs
+//   Particle    → World/Particle.cs
+//   Glyphs      → Rendering/Glyphs.cs
