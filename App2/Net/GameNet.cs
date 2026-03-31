@@ -38,8 +38,10 @@ public class GameNet : IDisposable
     int    _joinCode = -1;   // code user wants to join; -1 = not set
 
     PlayerInput _lastRemoteInput;
-    byte        _localSeq  = 0;
-    byte        _remoteSeq = 0;
+    byte        _localSeq        = 0;
+    byte        _remoteSeq       = 0;
+    byte        _localJumpSeq    = 0;   // steigt bei jedem neuen lokalen Jump
+    byte        _lastRemoteJumpSeq = 0; // letzter verarbeiteter Jump-Seq des Gegners
 
     float _broadcastTimer = 0f;
     float _helloTimer     = 0f;
@@ -140,8 +142,10 @@ public class GameNet : IDisposable
     public void SendInput(PlayerInput input)
     {
         if (_udp == null || _remoteEP == null || !Connected) return;
+        if ((input.Raw & 0x08) != 0) _localJumpSeq++;  // neuer Jump → Seq erhöhen
         byte[] pkt = new byte[7];
         pkt[0] = 0x01; pkt[1] = _localSeq++; pkt[2] = input.Raw; pkt[3] = input.AimAngle;
+        pkt[4] = _localJumpSeq;   // immer aktuelle Jump-Seq mitsenden
         try { _udp.Send(pkt, 7, _remoteEP); } catch { }
     }
 
@@ -187,7 +191,21 @@ public class GameNet : IDisposable
                 _remoteSeq = seq;
 
                 if (type == 0x01)
-                    _lastRemoteInput = new PlayerInput { Raw = d[2], AimAngle = d.Length >= 4 ? d[3] : (byte)0 };
+                {
+                    byte raw     = d[2];
+                    byte jumpSeq = d.Length >= 5 ? d[4] : (byte)0;
+                    // Jump nur feuern wenn neue Seq → verhindert Doppelsprung durch Paket-Reihenfolge
+                    if ((sbyte)(jumpSeq - _lastRemoteJumpSeq) > 0)
+                    {
+                        raw |= 0x08;   // Jump-Bit sicherstellen
+                        _lastRemoteJumpSeq = jumpSeq;
+                    }
+                    else
+                    {
+                        raw &= 0xF7;   // Jump-Bit löschen (bereits verarbeitet)
+                    }
+                    _lastRemoteInput = new PlayerInput { Raw = raw, AimAngle = d.Length >= 4 ? d[3] : (byte)0 };
+                }
                 else if (type == 0x02 && d.Length >= 40)
                 {
                     Buffer.BlockCopy(d, 0, _pendingSyncData, 0, 40);

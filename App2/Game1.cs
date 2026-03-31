@@ -14,6 +14,12 @@ public class Game1 : Game
     bool _debugOpen = false;
     const int DEBUG_W = 285;
 
+    bool   _termOpen  = false;
+    string _termInput = "";
+    List<(string text, Color col)> _termLines = new();
+    const int TERM_MAX_LINES = 20;
+    const int TERM_H         = 220;
+
     enum GameState { Menu, NameEntry, PlayMenu, Shop, Challenges, SkinConfig, Lobby, Playing, GameOver, RoundOver }
     GameState _state = GameState.Menu;
     int       _roundWinner = -1;
@@ -47,8 +53,8 @@ public class Game1 : Game
         ("IVORY",    new Color(240, 230, 200), Color.White, false),
         ("TOXIC",    new Color( 80, 255,  30), Color.White, false),
         ("ICE",      new Color(160, 230, 255), Color.White, false),
-        ("SHADOW",   new Color( 70,  30, 100), Color.White, false),
-        ("VOID",     new Color( 50,  20,  90), Color.White, false),
+        ("SHADOW",   new Color(140,  85,  40), Color.White, false),  // Kupfer/Bronze
+        ("VOID",     new Color( 12,  12,  18), Color.White, false),  // Tiefschwarz
         ("BLOOD",    new Color(170,  20,  30), Color.White, false),
         ("NEON",     new Color(255,  20, 200), Color.White, false),
         ("FOREST",   new Color( 30, 100,  40), Color.White, false),
@@ -60,6 +66,10 @@ public class Game1 : Game
         ("AURORA",   new Color( 40, 200, 180), new Color(140,  30, 200), true),
         ("LAVA",     new Color(255,  80,   0), new Color(120,  10,  10), true),
         ("OCEAN",    new Color( 60, 180, 255), new Color( 10,  40, 120), true),
+        // ── index 29-31 — RARE / EPIC / LEGENDARY (chest only) ───────────────
+        ("COSMIC",   new Color(220,  60, 180), new Color( 60,  20, 140), true),  // 10% — Magenta↔Tiefviolett
+        ("MOLTEN",   new Color(255, 150,  10), new Color(160,  20,  10), true),  //  5% — Gold↔Tiefrot
+        ("ABYSS",    new Color( 10,  10,  20), new Color( 80,  30, 110), true),  //  1% — Schwarz↔Dunkelviolett (Legendary)
     };
 
     static readonly (string Title, string Desc, int Target, int Coins)[] CHALLENGES =
@@ -139,7 +149,7 @@ public class Game1 : Game
     string _playerName      = "";
     int    _mySkin          = 0;
     int    _coins           = 0;
-    int    _ownedSkins      = (1 << 0) | (1 << 8);  // DEFAULT + SCARLET always owned
+    long   _ownedSkins      = (1L << 0) | (1L << 8);  // DEFAULT + SCARLET always owned
     long   _chalClaimed     = 0;   // bitmask — long needed for 64 challenges
     long   _chalActivated   = 0;   // bitmask: which challenges have had baseline set
     int[]  _chalBaselines   = new int[64];  // stat value when challenge became active
@@ -333,7 +343,8 @@ public class Game1 : Game
                 _state = GameState.Menu;
             }
         }
-        if (KeyJustPressed(keys, Keys.F1)) _debugOpen = !_debugOpen;
+        if (KeyJustPressed(keys, Keys.F1))      _debugOpen = !_debugOpen;
+        if (KeyJustPressed(keys, Keys.Insert))  _termOpen = !_termOpen;
 
         if (_state == GameState.NameEntry)
         {
@@ -363,7 +374,7 @@ public class Game1 : Game
                     {
                         _chestLastDuplicate = SkinOwned(_chestAnimPick);
                         if (!_chestLastDuplicate)
-                            _ownedSkins |= (1 << _chestAnimPick);
+                            _ownedSkins |= (1L << _chestAnimPick);
                         _chestResult = _chestAnimPick;
                         SaveGame();
                     }
@@ -522,6 +533,17 @@ public class Game1 : Game
     void OnTextInput(object sender, TextInputEventArgs e)
     {
         char c = e.Character;
+        // Terminal nimmt alle Eingaben wenn offen (außer NameEntry)
+        if (_termOpen && _state != GameState.NameEntry)
+        {
+            if (c == '\b' && _termInput.Length > 0)
+                _termInput = _termInput[..^1];
+            else if (c == '\r' || c == '\n')
+                SubmitTermCmd();
+            else if (!char.IsControl(c))
+                _termInput += c;
+            return;
+        }
         if (_state == GameState.NameEntry)
         {
             if (c == '\b' && _playerName.Length > 0)
@@ -591,7 +613,7 @@ public class Game1 : Game
             _statCurStreak++;
             if (_statCurStreak > _statBestStreak) _statBestStreak = _statCurStreak;
             if (_scoreEnemy == 0)   _statPerfectWins++;
-            if (_roundTime > 60f)   _statFastWin = 1;
+            if (_roundTime > 60f)   _statFastWin++;
             _coins += 30;
         }
         else if (winner != 0)
@@ -732,7 +754,10 @@ public class Game1 : Game
             if (visIdx >= 7) break;
             if ((_chalActivated & (1L << i)) == 0)
             {
-                _chalBaselines[i] = ChalStat(i);
+                int stat   = ChalStat(i);
+                int target = CHALLENGES[i].Target;
+                // Wenn Ziel bereits erreicht → Baseline so setzen dass Progress = Target (sofort abholbar)
+                _chalBaselines[i] = stat >= target ? stat - target : stat;
                 _chalActivated   |= (1L << i);
                 changed = true;
             }
@@ -741,11 +766,11 @@ public class Game1 : Game
         if (changed) SaveGame();
     }
 
-    bool SkinOwned(int skin) => skin == 0 || skin == 8 || (_ownedSkins & (1 << skin)) != 0;
+    bool SkinOwned(int skin) => skin == 0 || skin == 8 || (_ownedSkins & (1L << skin)) != 0;
 
     bool HasUnownedSkins()
     {
-        for (int i = 1; i < SKINS.Length - 1; i++)
+        for (int i = 1; i < SKINS.Length; i++)
             if (!SkinOwned(i)) return true;
         return false;
     }
@@ -829,6 +854,7 @@ public class Game1 : Game
             if (_debugOpen) DrawDebug();
         }
 
+        if (_termOpen) DrawTerminal();
         _spriteBatch.End();
         base.Draw(gt);
     }
@@ -1286,6 +1312,70 @@ public class Game1 : Game
         TxtMed("NAME APPEARS UNDER YOUR CHARACTER", cx - 198, cy + 36, new Color(60, 70, 110));
     }
 
+    // ── Terminal ──────────────────────────────────────────────────────────────
+
+    void TermPrint(string text, Color col)
+    {
+        _termLines.Add((text, col));
+        if (_termLines.Count > TERM_MAX_LINES) _termLines.RemoveAt(0);
+    }
+
+    void SubmitTermCmd()
+    {
+        string cmd = _termInput.Trim();
+        _termInput = "";
+        if (cmd == "") return;
+        TermPrint("> " + cmd, new Color(180, 200, 255));
+        ProcessTermCmd(cmd);
+    }
+
+    void ProcessTermCmd(string cmd)
+    {
+        switch (cmd.ToLower())
+        {
+            case "help":
+                TermPrint("Befehle: help", new Color(120, 200, 120));
+                break;
+            default:
+                TermPrint("Unbekannt: " + cmd, new Color(220, 100, 80));
+                break;
+        }
+    }
+
+    void DrawTerminal()
+    {
+        int ty = SH - TERM_H;
+        // Hintergrund
+        R(0, ty, SW, TERM_H, new Color(8, 10, 16, 235));
+        R(0, ty, SW, 1, new Color(60, 120, 200, 200));
+
+        // Header
+        R(0, ty, SW, 18, new Color(14, 18, 30, 240));
+        Txt("TERMINAL", 8, ty + 4, new Color(80, 160, 255));
+        string hint = "[INSERT] schliessen";
+        Txt(hint, SW - hint.Length * 6 - 8, ty + 4, new Color(60, 80, 110));
+
+        // Ausgabe-Zeilen
+        const int lineH = 12;
+        int linesAreaH = TERM_H - 18 - 20;  // zwischen Header und Eingabezeile
+        int maxVisible = linesAreaH / lineH;
+        int startLine  = Math.Max(0, _termLines.Count - maxVisible);
+        for (int i = startLine; i < _termLines.Count; i++)
+        {
+            int ly = ty + 22 + (i - startLine) * lineH;
+            Txt(_termLines[i].text, 8, ly, _termLines[i].col);
+        }
+
+        // Eingabezeile
+        int inputY = ty + TERM_H - 16;
+        R(0, inputY - 2, SW, 1, new Color(30, 50, 80));
+        bool cursorOn = _menuTime % 1.0f < 0.5f;
+        string inputStr = "> " + _termInput + (cursorOn ? "_" : " ");
+        Txt(inputStr, 8, inputY, new Color(200, 230, 255));
+    }
+
+    // ── Challenges ────────────────────────────────────────────────────────────
+
     void DrawChallenges()
     {
         DrawMenuBg();
@@ -1332,25 +1422,33 @@ public class Game1 : Game
             string progStr = $"{Math.Min(progress, ch.Target)}/{ch.Target}";
             Txt(progStr, barX + barW + 6, barY, new Color(120, 130, 170));
 
-            int claimX = startX + tileW - 140, claimY = ty + tileH / 2 - 14;
+            // Claim-Button nimmt die volle rechte Seite des Tiles ein
+            int claimX  = startX + tileW - 140;
+            int claimBY = ty + 4;
+            int claimBH = tileH - 8;
+            int claimMY = ty + tileH / 2;   // vertikale Mitte des Tiles
             string rewardStr = $"+{ch.Coins}";
             if (complete)
             {
                 bool hover = _mousePos.X >= claimX && _mousePos.X <= claimX + 130 &&
                              _mousePos.Y >= ty     && _mousePos.Y <= ty + tileH;
-                R(claimX, claimY - 4, 130, 30, hover ? new Color(50, 130, 50) : new Color(28, 80, 28));
-                TxtMed(rewardStr, claimX + 8, claimY + 4, new Color(255, 220, 60));
-                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimY + 11, new Color(200, 170, 40));
+                R(claimX, claimBY, 130, claimBH, hover ? new Color(50, 130, 50) : new Color(28, 80, 28));
+                R(claimX, claimBY, 130, 2,       hover ? new Color(80, 180, 80) : new Color(40, 110, 40));
+                R(claimX, claimBY + claimBH - 2, 130, 2, hover ? new Color(80, 180, 80) : new Color(40, 110, 40));
+                TxtMed(rewardStr, claimX + 8, claimMY - 14, new Color(255, 220, 60));
+                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimMY - 7, new Color(200, 170, 40));
+                Txt("CLAIM", claimX + 8, claimMY + 4, new Color(150, 220, 150));
             }
             else
             {
-                TxtMed(rewardStr, claimX + 8, claimY + 4, new Color(80, 90, 60));
-                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimY + 11, new Color(60, 68, 50));
+                TxtMed(rewardStr, claimX + 8, claimMY - 14, new Color(80, 90, 60));
+                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimMY - 7, new Color(60, 68, 50));
             }
             visIdx++;
         }
 
         TxtMed("[ESC] BACK", cx - 60, SH - 36, new Color(100, 110, 160));
+
     }
 
     void HandleChallengesClick(bool click)
@@ -1358,7 +1456,7 @@ public class Game1 : Game
         if (!click) return;
         const int tileW = 560, tileH = 80, gapY = 10;
         int startX = SW / 2 - tileW / 2;
-        int startY = 90;
+        int startY = 86;
 
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
@@ -1424,7 +1522,12 @@ public class Game1 : Game
 
                 bool isLanded = progress >= 1f && i == CHEST_TARGET_IDX;
                 Color itemBg   = isLanded ? new Color(55, 45, 12)  : new Color(34, 38, 64);
-                Color itemEdge = isLanded ? new Color(255, 200, 50) : new Color(42, 48, 78);
+                Color itemEdge = isLanded   ? new Color(255, 200, 50)
+                               : skinIdx == 31 ? new Color(255, 180, 20)   // ABYSS legendary — gold
+                               : skinIdx == 30 ? new Color(180, 60, 255)   // MOLTEN epic — lila
+                               : skinIdx == 29 ? new Color(60, 140, 255)   // COSMIC rare — blau
+                               : SKINS[skinIdx].Animated ? new Color(200, 160, 40, 160)  // animated — gedämpftes gold
+                               : new Color(42, 48, 78);
 
                 R(itemX + 3, stripY + 3, slotW, slotH, new Color(0, 0, 0, 70));
                 R(itemX, stripY, slotW, slotH, itemBg);
@@ -1543,17 +1646,27 @@ public class Game1 : Game
         {
             if (_coins < CHEST_PRICE) return;
 
-            // ── Weighted rarity: 5 % animated, 95 % regular ──────────────────
+            // ── Weighted rarity ───────────────────────────────────────────────
+            // 1% LEGENDARY (ABYSS=31), 5% EPIC (MOLTEN=30), 10% RARE (COSMIC=29),
+            // 5% animated, 79% regular
+            const int SKIN_COSMIC = 29, SKIN_MOLTEN = 30, SKIN_ABYSS = 31;
             var regularPool  = new List<int>();
             var animatedPool = new List<int>();
             for (int i = 0; i < SKINS.Length; i++)
             {
-                if (i == 0 || i == 8) continue;   // skip DEFAULT + SCARLET (always free)
+                if (i == 0 || i == 8) continue;                    // always free
+                if (i >= SKIN_COSMIC)  continue;                   // special — handled below
                 if (SKINS[i].Animated) animatedPool.Add(i);
                 else                   regularPool.Add(i);
             }
             float roll = (float)_rng.NextDouble();
-            if (animatedPool.Count > 0 && roll < 0.05f)
+            if (roll < 0.01f)
+                _chestAnimPick = SKIN_ABYSS;
+            else if (roll < 0.06f)
+                _chestAnimPick = SKIN_MOLTEN;
+            else if (roll < 0.16f)
+                _chestAnimPick = SKIN_COSMIC;
+            else if (animatedPool.Count > 0 && roll < 0.21f)
                 _chestAnimPick = animatedPool[_rng.Next(animatedPool.Count)];
             else
                 _chestAnimPick = regularPool[_rng.Next(regularPool.Count)];
@@ -1662,6 +1775,13 @@ public class Game1 : Game
                 Color sc = SkinColor(i, _menuTime);
                 DrawEllipse(startX + 28, ty + tileH / 2, 16, 16, sc);
                 TxtMed(SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, sc);
+                // Rarity badge for special skins
+                if (i == 31)
+                    Txt("LEGENDARY", startX + 52, ty + tileH / 2 + 8, new Color(255, 200, 50));
+                else if (i == 30)
+                    Txt("EPIC",      startX + 52, ty + tileH / 2 + 8, new Color(180, 80, 255));
+                else if (i == 29)
+                    Txt("RARE",      startX + 52, ty + tileH / 2 + 8, new Color(80, 160, 255));
                 if (animated)
                     TxtMed("★", startX + tileW - 32, ty + tileH / 2 - 7, new Color(255, 200, 50));
                 if (selected)
@@ -1731,7 +1851,9 @@ public class Game1 : Game
     {
         try
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "save.dat");
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BRAWLHAVEN", "save.dat");
             if (!File.Exists(path)) return;
             using var br = new BinaryReader(File.OpenRead(path));
             byte ver = br.ReadByte();
@@ -1750,8 +1872,8 @@ public class Game1 : Game
             if (ver >= 3)
             {
                 _coins      = br.ReadInt32();
-                _ownedSkins = br.ReadInt32();
-                _ownedSkins |= (1 << 0) | (1 << 8);
+                _ownedSkins = ver >= 5 ? br.ReadInt64() : (long)br.ReadInt32();
+                _ownedSkins |= (1L << 0) | (1L << 8);
             }
             if (ver >= 4)
             {
@@ -1767,9 +1889,12 @@ public class Game1 : Game
     {
         try
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "save.dat");
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BRAWLHAVEN", "save.dat");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             using var bw = new BinaryWriter(File.Create(path));
-            bw.Write((byte)4);
+            bw.Write((byte)5);
             bw.Write(_playerName);
             bw.Write(_mySkin);
             bw.Write(_chalClaimed);      // long (8 bytes)
