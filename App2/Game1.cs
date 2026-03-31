@@ -23,35 +23,126 @@ public class Game1 : Game
     int  _scoreEnemy = 0;
     const int SCORE_TO_WIN = 3;
 
-    static readonly (string Name, Color Col, int Price)[] SKINS =
+    // Col2 / Animated only used for animated skins; regular skins set Col2=Color.White, Animated=false
+    static readonly (string Name, Color Col, Color Col2, bool Animated)[] SKINS =
     {
-        ("DEFAULT", new Color( 80, 160, 255),   0),
-        ("CRIMSON", new Color(220,  50,  60), 200),
-        ("EMERALD", new Color( 50, 200, 100), 300),
-        ("GOLD",    new Color(255, 200,  50), 500),
-        ("PURPLE",  new Color(160,  80, 220), 300),
-        ("ORANGE",  new Color(255, 140,  30), 200),
-        ("PINK",    new Color(255, 100, 180), 500),
-        ("CYAN",    new Color( 50, 220, 220), 300),
-        ("SCARLET", new Color(255, 100,  80),   0),
+        // ── index 0  — always free ───────────────────────────────────────────
+        ("DEFAULT",  new Color( 80, 160, 255), Color.White, false),
+        // ── index 1-7 — regular unlockable ───────────────────────────────────
+        ("CRIMSON",  new Color(220,  50,  60), Color.White, false),
+        ("EMERALD",  new Color( 50, 200, 100), Color.White, false),
+        ("GOLD",     new Color(255, 200,  50), Color.White, false),
+        ("PURPLE",   new Color(160,  80, 220), Color.White, false),
+        ("ORANGE",   new Color(255, 140,  30), Color.White, false),
+        ("PINK",     new Color(255, 100, 180), Color.White, false),
+        ("CYAN",     new Color( 50, 220, 220), Color.White, false),
+        // ── index 8  — always free (CPU) ─────────────────────────────────────
+        ("SCARLET",  new Color(255, 100,  80), Color.White, false),
+        // ── index 9-23 — more regular skins ──────────────────────────────────
+        ("LIME",     new Color(130, 230,  50), Color.White, false),
+        ("NAVY",     new Color( 30,  50, 160), Color.White, false),
+        ("TEAL",     new Color( 30, 180, 160), Color.White, false),
+        ("MAROON",   new Color(160,  30,  60), Color.White, false),
+        ("SILVER",   new Color(180, 190, 210), Color.White, false),
+        ("IVORY",    new Color(240, 230, 200), Color.White, false),
+        ("TOXIC",    new Color( 80, 255,  30), Color.White, false),
+        ("ICE",      new Color(160, 230, 255), Color.White, false),
+        ("SHADOW",   new Color( 70,  30, 100), Color.White, false),
+        ("VOID",     new Color( 50,  20,  90), Color.White, false),
+        ("BLOOD",    new Color(170,  20,  30), Color.White, false),
+        ("NEON",     new Color(255,  20, 200), Color.White, false),
+        ("FOREST",   new Color( 30, 100,  40), Color.White, false),
+        ("SAND",     new Color(220, 190, 120), Color.White, false),
+        ("MIDNIGHT", new Color( 20,  20,  80), Color.White, false),
+        // ── index 24-28 — ANIMATED (≤5 % chest chance) ───────────────────────
+        ("RAINBOW",  new Color(255,   0,   0), Color.White,             true),  // full hue cycle
+        ("GALAXY",   new Color(160,  60, 220), new Color( 20,  10,  80), true),
+        ("AURORA",   new Color( 40, 200, 180), new Color(140,  30, 200), true),
+        ("LAVA",     new Color(255,  80,   0), new Color(120,  10,  10), true),
+        ("OCEAN",    new Color( 60, 180, 255), new Color( 10,  40, 120), true),
     };
 
     static readonly (string Title, string Desc, int Target, int Coins)[] CHALLENGES =
     {
-        ("FIRST WIN",   "Win your first match",        1,  100),
-        ("HIT MACHINE", "Land 30 hits",               30,  200),
-        ("VETERAN",     "Win 10 matches",             10,  500),
-        ("UNTOUCHABLE", "Win without getting blasted",  1,  300),
-        ("POWERHOUSE",  "Deal 500 total damage",      500,  400),
-        ("RELENTLESS",  "Win 3 times in a row",         3,  350),
-        ("SPEED RUN",   "Win in under 60 seconds",      1,  250),
+        // ── WINS (indices 0-19) ───────────────────────────────────────────────
+        ("FIRST WIN",    "Win 1 match",              1,    100),
+        ("BRAWLER",      "Win 3 matches",            3,    160),
+        ("FIGHTER",      "Win 5 matches",            5,    220),
+        ("WARRIOR",      "Win 10 matches",          10,    320),
+        ("VETERAN",      "Win 15 matches",          15,    430),
+        ("CHAMPION",     "Win 20 matches",          20,    550),
+        ("GLADIATOR",    "Win 25 matches",          25,    680),
+        ("DOMINATOR",    "Win 30 matches",          30,    830),
+        ("CONQUEROR",    "Win 40 matches",          40,   1050),
+        ("LEGEND",       "Win 50 matches",          50,   1280),
+        ("WARLORD",      "Win 60 matches",          60,   1550),
+        ("TITAN",        "Win 75 matches",          75,   1900),
+        ("OVERLORD",     "Win 100 matches",        100,   2400),
+        ("WARCHIEF",     "Win 125 matches",        125,   2950),
+        ("SUPREME",      "Win 150 matches",        150,   3500),
+        ("IMMORTAL",     "Win 175 matches",        175,   4100),
+        ("GOD OF WAR",   "Win 200 matches",        200,   4800),
+        ("UNSTOPPABLE",  "Win 250 matches",        250,   6000),
+        ("INVINCIBLE",   "Win 300 matches",        300,   7500),
+        ("ETERNAL",      "Win 500 matches",        500,  12000),
+        // ── HITS (indices 20-33) ──────────────────────────────────────────────
+        ("SLUGGER",      "Land 20 hits",            20,    110),
+        ("STRIKER",      "Land 50 hits",            50,    170),
+        ("HIT MACHINE",  "Land 100 hits",          100,    270),
+        ("PUNISHER",     "Land 200 hits",          200,    400),
+        ("BRUISER",      "Land 350 hits",          350,    570),
+        ("HAMMER",       "Land 500 hits",          500,    770),
+        ("CRUSHER",      "Land 750 hits",          750,   1030),
+        ("DESTROYER",    "Land 1000 hits",        1000,   1350),
+        ("MASSACRE",     "Land 1500 hits",        1500,   1900),
+        ("DEVASTATOR",   "Land 2000 hits",        2000,   2500),
+        ("ANNIHILATOR",  "Land 3000 hits",        3000,   3400),
+        ("OBLITERATOR",  "Land 5000 hits",        5000,   4800),
+        ("EXTINCTION",   "Land 7500 hits",        7500,   6500),
+        ("HIT LEGEND",   "Land 10000 hits",      10000,   8500),
+        // ── DAMAGE (indices 34-45) ────────────────────────────────────────────
+        ("ENFORCER",     "Deal 200 damage",         200,    120),
+        ("POWERHOUSE",   "Deal 500 damage",         500,    210),
+        ("RAVAGER",      "Deal 1000 damage",       1000,    350),
+        ("DECIMATOR",    "Deal 2500 damage",       2500,    560),
+        ("RUINER",       "Deal 5000 damage",       5000,    850),
+        ("DEMOLISHER",   "Deal 10000 damage",     10000,   1300),
+        ("DOOMSDAY",     "Deal 20000 damage",     20000,   1950),
+        ("APOCALYPSE",   "Deal 40000 damage",     40000,   2850),
+        ("ARMAGEDDON",   "Deal 75000 damage",     75000,   4100),
+        ("CALAMITY",     "Deal 125000 damage",   125000,   5800),
+        ("CATACLYSM",    "Deal 200000 damage",   200000,   8200),
+        ("OBLIVION",     "Deal 350000 damage",   350000,  12000),
+        // ── STREAK (indices 46-52) ────────────────────────────────────────────
+        ("ON A ROLL",    "Win 2 in a row",           2,    160),
+        ("HOT STREAK",   "Win 3 in a row",           3,    270),
+        ("RELENTLESS",   "Win 5 in a row",           5,    470),
+        ("UNBEATABLE",   "Win 7 in a row",           7,    740),
+        ("ENDLESS",      "Win 10 in a row",         10,   1150),
+        ("GODLIKE",      "Win 15 in a row",         15,   2100),
+        ("INFINITE",     "Win 20 in a row",         20,   3400),
+        // ── PERFECT WINS (indices 53-58) ──────────────────────────────────────
+        ("UNTOUCHABLE",  "Win without getting hit",  1,    210),
+        ("FLAWLESS",     "Win perfectly 3 times",    3,    440),
+        ("PERFECT",      "Win perfectly 5 times",    5,    730),
+        ("PRISTINE",     "Win perfectly 10 times",  10,   1450),
+        ("IMMACULATE",   "Win perfectly 20 times",  20,   2700),
+        ("DIVINE",       "Win perfectly 30 times",  30,   4200),
+        // ── FAST WINS (indices 59-63) ─────────────────────────────────────────
+        ("SPEED RUN",    "Win in under 60s",         1,    210),
+        ("SPEEDSTER",    "Speed win 3 times",        3,    390),
+        ("LIGHTNING",    "Speed win 5 times",        5,    670),
+        ("FLASH",        "Speed win 10 times",      10,   1250),
+        ("SONIC",        "Speed win 20 times",      20,   2300),
     };
 
     string _playerName      = "";
     int    _mySkin          = 0;
     int    _coins           = 0;
     int    _ownedSkins      = (1 << 0) | (1 << 8);  // DEFAULT + SCARLET always owned
-    int    _chalClaimed     = 0;
+    long   _chalClaimed     = 0;   // bitmask — long needed for 64 challenges
+    long   _chalActivated   = 0;   // bitmask: which challenges have had baseline set
+    int[]  _chalBaselines   = new int[64];  // stat value when challenge became active
     int    _statWins        = 0;
     int    _statHits        = 0;
     int    _statDmgDealt    = 0;
@@ -93,8 +184,22 @@ public class Game1 : Game
     float _syncTimer = 0f;
     static readonly Random _rng = new Random();
 
-    const int CHEST_PRICE = 150;
-    int _chestResult = -2;   // -2 = never opened, -1 = all owned, >=0 = skin index
+    const int   CHEST_PRICE      = 150;
+    const float CHEST_ANIM_DUR   = 3.5f;
+    const int   CHEST_POOL_SIZE  = 60;   // infinite-loop pool; target at index 45
+    const int   CHEST_TARGET_IDX = 45;
+
+    int     _chestResult        = -2;   // -2=never opened, >=0=skin index
+    bool    _chestLastDuplicate = false;
+    bool    _chestAnimating     = false;
+    float   _chestAnimTimer     = 0f;
+    int     _chestAnimPick      = -1;
+    int[]   _chestPool          = null; // circular pool for infinite strip
+
+    float   _menuTime = 0f;            // elapsed time for animated skin rendering
+
+    int _configTab     = 0;   // 0=SKIN  1=CONTROLS  2=STATS
+    int _configScrollY = 0;
 
     KeyboardState _prevKeys;
     MouseState    _prevMouse;
@@ -206,6 +311,8 @@ public class Game1 : Game
     void UpdateInner(GameTime gt)
     {
         float dt = Math.Min((float)gt.ElapsedGameTime.TotalSeconds, 0.05f);
+        _menuTime += dt;
+        ActivateVisibleChallenges();
         var keys  = Keyboard.GetState();
         var mouse = Mouse.GetState();
         bool mouseClick = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
@@ -246,7 +353,27 @@ public class Game1 : Game
         }
         else if (_state == GameState.Shop)
         {
-            HandleShopClick(mouseClick);
+            if (_chestAnimating)
+            {
+                _chestAnimTimer += dt;
+                if (_chestAnimTimer >= CHEST_ANIM_DUR)
+                {
+                    // Award skin exactly once when animation finishes
+                    if (_chestResult != _chestAnimPick)
+                    {
+                        _chestLastDuplicate = SkinOwned(_chestAnimPick);
+                        if (!_chestLastDuplicate)
+                            _ownedSkins |= (1 << _chestAnimPick);
+                        _chestResult = _chestAnimPick;
+                        SaveGame();
+                    }
+                    if (mouseClick) _chestAnimating = false;
+                }
+            }
+            else
+            {
+                HandleShopClick(mouseClick);
+            }
         }
         else if (_state == GameState.Challenges)
         {
@@ -254,6 +381,9 @@ public class Game1 : Game
         }
         else if (_state == GameState.SkinConfig)
         {
+            int scrollDelta = mouse.ScrollWheelValue - _prevMouse.ScrollWheelValue;
+            _configScrollY -= scrollDelta / 3;
+            if (_configScrollY < 0) _configScrollY = 0;
             HandleSkinConfigClick(mouseClick);
         }
         else if (_state == GameState.Lobby)
@@ -357,6 +487,8 @@ public class Game1 : Game
             bool p2Auth = _isLocalMode || _net.Role == NetRole.Client;
             _p1.Update(dt, p1Input, _platforms, _p2, this, p1Auth);
             _p2.Update(dt, p2Input, _platforms, _p1, this, p2Auth);
+            // Keep animated skin color in sync every frame
+            if (SKINS[_mySkin].Animated) _p1.Color = SkinColor(_mySkin, _menuTime);
             CheckBlast(_p1);
             CheckBlast(_p2);
             if (_killTextTimer > 0f) { _killTextTimer -= dt; if (_killTextTimer <= 0f) _lastKillText = ""; }
@@ -574,17 +706,40 @@ public class Game1 : Game
     bool KeyJustPressed(KeyboardState cur, Keys k) =>
         cur.IsKeyDown(k) && !_prevKeys.IsKeyDown(k);
 
-    int ChalProgress(int i) => i switch
+    // Raw stat for challenge index (no baseline)
+    int ChalStat(int i) => i switch
     {
-        0 => _statWins,
-        1 => _statHits,
-        2 => _statWins,
-        3 => _statPerfectWins,
-        4 => _statDmgDealt,
-        5 => _statBestStreak,
-        6 => _statFastWin,
+        >= 0  and <= 19 => _statWins,
+        >= 20 and <= 33 => _statHits,
+        >= 34 and <= 45 => _statDmgDealt,
+        >= 46 and <= 52 => _statBestStreak,
+        >= 53 and <= 58 => _statPerfectWins,
+        >= 59 and <= 63 => _statFastWin,
         _ => 0
     };
+
+    // Progress since the challenge first appeared (baseline subtracted)
+    int ChalProgress(int i) => Math.Max(0, ChalStat(i) - _chalBaselines[i]);
+
+    // Record baseline for each challenge the first time it enters the visible 7
+    void ActivateVisibleChallenges()
+    {
+        bool changed = false;
+        int visIdx = 0;
+        for (int i = 0; i < CHALLENGES.Length; i++)
+        {
+            if ((_chalClaimed & (1L << i)) != 0) continue;
+            if (visIdx >= 7) break;
+            if ((_chalActivated & (1L << i)) == 0)
+            {
+                _chalBaselines[i] = ChalStat(i);
+                _chalActivated   |= (1L << i);
+                changed = true;
+            }
+            visIdx++;
+        }
+        if (changed) SaveGame();
+    }
 
     bool SkinOwned(int skin) => skin == 0 || skin == 8 || (_ownedSkins & (1 << skin)) != 0;
 
@@ -595,9 +750,39 @@ public class Game1 : Game
         return false;
     }
 
+    // Returns current display color for a skin, animated or not
+    Color SkinColor(int idx, float t)
+    {
+        var s = SKINS[idx];
+        if (!s.Animated) return s.Col;
+        if (s.Name == "RAINBOW") return HsvToRgb((t * 0.3f) % 1f, 1f, 1f);
+        float f = MathF.Sin(t * 1.5f) * 0.5f + 0.5f;
+        return new Color(
+            (int)(s.Col.R + (s.Col2.R - s.Col.R) * f),
+            (int)(s.Col.G + (s.Col2.G - s.Col.G) * f),
+            (int)(s.Col.B + (s.Col2.B - s.Col.B) * f));
+    }
+
+    static Color HsvToRgb(float h, float s, float v)
+    {
+        float c = v * s;
+        float x = c * (1f - MathF.Abs((h * 6f) % 2f - 1f));
+        float m = v - c;
+        float r, g, b;
+        switch ((int)(h * 6) % 6) {
+            case 0:  r=c; g=x; b=0; break;
+            case 1:  r=x; g=c; b=0; break;
+            case 2:  r=0; g=c; b=x; break;
+            case 3:  r=0; g=x; b=c; break;
+            case 4:  r=x; g=0; b=c; break;
+            default: r=c; g=0; b=x; break;
+        }
+        return new Color((int)((r+m)*255), (int)((g+m)*255), (int)((b+m)*255));
+    }
+
     protected override void Draw(GameTime gt)
     {
-        GraphicsDevice.Clear(new Color(18, 20, 35));
+        GraphicsDevice.Clear(new Color(30, 33, 52));
         _spriteBatch.Begin();
 
         if (_state == GameState.NameEntry)
@@ -849,7 +1034,7 @@ public class Game1 : Game
         int    panX   = leftSide ? edgeX : edgeX - panW;
 
         R(panX - 2, y - 2, panW + 4, panH + 4, new Color(0, 0, 0, 150));
-        R(panX,     y,     panW,     panH,     new Color(18, 22, 40));
+        R(panX,     y,     panW,     panH,     new Color(30, 35, 58));
         R(panX, y, panW, 2, p.Color);  // colored top border
 
         Color dc = p.Damage < 50  ? new Color(100, 230, 100)
@@ -964,16 +1149,16 @@ public class Game1 : Game
 
     void DrawMenuBg()
     {
-        R(0, 0, SW, SH, new Color(18, 20, 35));
-        for (int x = 0; x < SW; x += 80) R(x, 0, 1, SH, new Color(27, 30, 50));
-        for (int y = 0; y < SH; y += 80) R(0, y, SW, 1, new Color(27, 30, 50));
+        R(0, 0, SW, SH, new Color(30, 33, 52));
+        for (int x = 0; x < SW; x += 80) R(x, 0, 1, SH, new Color(44, 48, 72));
+        for (int y = 0; y < SH; y += 80) R(0, y, SW, 1, new Color(44, 48, 72));
     }
 
     bool DrawButton(int bx, int by, int bw, int bh, string label)
     {
         bool hover = _mousePos.X >= bx && _mousePos.X <= bx + bw &&
                      _mousePos.Y >= by && _mousePos.Y <= by + bh;
-        Color bg     = hover ? new Color(50, 70, 130)   : new Color(26, 30, 58);
+        Color bg     = hover ? new Color(50, 70, 130)   : new Color(38, 42, 72);
         Color border = hover ? new Color(110, 150, 255)  : new Color(50, 60, 100);
         Color tc     = hover ? Color.White               : new Color(160, 170, 210);
         R(bx + 3, by + 3, bw, bh, new Color(0, 0, 0, 60));
@@ -1004,7 +1189,7 @@ public class Game1 : Game
             DrawButton(cx - MENU_BW / 2, startY + i * (MENU_BH + MENU_GAP), MENU_BW, MENU_BH, labels[i]);
 
         string coinsStr = $"COINS: {_coins}";
-        Txt(coinsStr, cx - coinsStr.Length * 3, startY + labels.Length * (MENU_BH + MENU_GAP) + 16, new Color(255, 200, 50));
+        TxtMed(coinsStr, cx - coinsStr.Length * 6, startY + labels.Length * (MENU_BH + MENU_GAP) + 16, new Color(255, 200, 50));
 
         string fps = $"FPS {(int)_fps}";
         Txt(fps, SW - fps.Length * 6 - 10, 10, new Color(60, 70, 100));
@@ -1024,7 +1209,7 @@ public class Game1 : Game
             if      (i == 0) _state = GameState.PlayMenu;
             else if (i == 1) _state = GameState.Shop;
             else if (i == 2) _state = GameState.Challenges;
-            else             _state = GameState.SkinConfig;
+            else             { _state = GameState.SkinConfig; _configScrollY = 0; }
             break;
         }
     }
@@ -1042,7 +1227,7 @@ public class Game1 : Game
         for (int i = 0; i < labels.Length; i++)
             DrawButton(cx - MENU_BW / 2, startY + i * (MENU_BH + MENU_GAP), MENU_BW, MENU_BH, labels[i]);
 
-        Txt("[ESC] BACK", cx - 30, cy + 120, new Color(100, 110, 160));
+        TxtMed("[ESC] BACK", cx - 60, cy + 120, new Color(100, 110, 160));
     }
 
     void HandlePlayMenuClick(bool click)
@@ -1083,7 +1268,7 @@ public class Game1 : Game
         string title = "BRAWLHAVEN";
         TxtBig(title, cx - title.Length * 6, cy - 180, new Color(100, 140, 255));
 
-        Txt("ENTER YOUR NAME", cx - 45, cy - 100, new Color(160, 170, 210));
+        TxtMed("ENTER YOUR NAME", cx - 90, cy - 100, new Color(160, 170, 210));
 
         int bw = 200, bh = 40;
         int bx = cx - bw / 2, by = cy - 60;
@@ -1094,11 +1279,11 @@ public class Game1 : Game
         TxtBig(display, bx + 10, by + bh / 2 - 7, Color.White);
 
         if (_playerName.Length >= 1)
-            Txt("[ENTER] CONFIRM", cx - 45, cy + 10, new Color(100, 220, 100));
+            TxtMed("[ENTER] CONFIRM", cx - 90, cy + 10, new Color(100, 220, 100));
         else
-            Txt("TYPE A NAME  (MAX 12 CHARS)", cx - 81, cy + 10, new Color(70, 80, 120));
+            TxtMed("TYPE A NAME (MAX 12 CHARS)", cx - 156, cy + 10, new Color(70, 80, 120));
 
-        Txt("YOUR NAME APPEARS UNDER YOUR CHARACTER", cx - 111, cy + 32, new Color(60, 70, 110));
+        TxtMed("NAME APPEARS UNDER YOUR CHARACTER", cx - 198, cy + 36, new Color(60, 70, 110));
     }
 
     void DrawChallenges()
@@ -1108,19 +1293,24 @@ public class Game1 : Game
         string title = "CHALLENGES";
         TxtBig(title, cx - title.Length * 6, 36, new Color(100, 140, 255));
 
-        const int tileW = 560, tileH = 68, gapY = 10;
+        const int tileW = 560, tileH = 80, gapY = 10;
         int startX = cx - tileW / 2;
-        int startY = 90;
+        int startY = 86;
 
+        int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
         {
+            bool claimed = (_chalClaimed & (1L << i)) != 0;
+            if (claimed) continue;
+            if (visIdx >= 7) break;   // show max 7 at a time
+
             var  ch       = CHALLENGES[i];
-            int  ty       = startY + i * (tileH + gapY);
+            int  ty       = startY + visIdx * (tileH + gapY);
             int  progress = ChalProgress(i);
             bool complete = progress >= ch.Target;
-            bool claimed  = (_chalClaimed & (1 << i)) != 0;
-            Color bg   = claimed ? new Color(22, 35, 22) : complete ? new Color(28, 40, 55) : new Color(22, 24, 42);
-            Color edge = claimed ? new Color(60, 140, 60) : complete ? new Color(100, 160, 255) : new Color(45, 50, 80);
+
+            Color bg   = complete ? new Color(28, 40, 55) : new Color(22, 24, 42);
+            Color edge = complete ? new Color(100, 160, 255) : new Color(45, 50, 80);
             R(startX + 3, ty + 3, tileW, tileH, new Color(0, 0, 0, 60));
             R(startX, ty, tileW, tileH, bg);
             R(startX, ty, tileW, 2, edge);
@@ -1128,64 +1318,73 @@ public class Game1 : Game
             R(startX, ty, 2, tileH, edge);
             R(startX + tileW - 2, ty, 2, tileH, edge);
 
-            // Coin icon (gold circle)
             DrawEllipse(startX + 22, ty + tileH / 2, 14, 14, new Color(255, 200, 50));
 
-            Color titleCol = claimed ? new Color(80, 160, 80) : complete ? Color.White : new Color(160, 170, 210);
-            Txt(ch.Title, startX + 44, ty + 10, titleCol);
-            Txt(ch.Desc,  startX + 44, ty + 26, new Color(100, 110, 150));
+            Color titleCol = complete ? Color.White : new Color(160, 170, 210);
+            TxtMed(ch.Title, startX + 44, ty + 10, titleCol);
+            TxtMed(ch.Desc,  startX + 44, ty + 30, new Color(100, 110, 150));
 
-            int barX = startX + 44, barY = ty + 44, barW = 300, barH = 8;
+            int barX = startX + 44, barY = ty + 54, barW = 280, barH = 8;
             R(barX, barY, barW, barH, new Color(30, 32, 50));
             int fill = (int)(barW * Math.Min(1f, (float)progress / ch.Target));
-            Color barCol = claimed ? new Color(60, 160, 60) : complete ? new Color(100, 200, 255) : new Color(80, 130, 220);
+            Color barCol = complete ? new Color(100, 200, 255) : new Color(80, 130, 220);
             R(barX, barY, fill, barH, barCol);
             string progStr = $"{Math.Min(progress, ch.Target)}/{ch.Target}";
-            Txt(progStr, barX + barW + 6, barY - 2, new Color(120, 130, 170));
+            Txt(progStr, barX + barW + 6, barY, new Color(120, 130, 170));
 
-            int claimX = startX + tileW - 130, claimY = ty + tileH / 2 - 10;
-            string rewardStr = $"+{ch.Coins} COINS";
-            if (claimed)
+            int claimX = startX + tileW - 140, claimY = ty + tileH / 2 - 14;
+            string rewardStr = $"+{ch.Coins}";
+            if (complete)
             {
-                Txt("CLAIMED", claimX + 10, claimY, new Color(70, 160, 70));
-            }
-            else if (complete)
-            {
-                bool hover = _mousePos.X >= claimX && _mousePos.X <= claimX + 120 &&
+                bool hover = _mousePos.X >= claimX && _mousePos.X <= claimX + 130 &&
                              _mousePos.Y >= ty     && _mousePos.Y <= ty + tileH;
-                R(claimX, claimY - 3, 120, 24, hover ? new Color(50, 130, 50) : new Color(28, 80, 28));
-                Txt(rewardStr, claimX + 6, claimY + 3, new Color(255, 220, 60));
+                R(claimX, claimY - 4, 130, 30, hover ? new Color(50, 130, 50) : new Color(28, 80, 28));
+                TxtMed(rewardStr, claimX + 8, claimY + 4, new Color(255, 220, 60));
+                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimY + 11, new Color(200, 170, 40));
             }
             else
             {
-                Txt(rewardStr, claimX + 10, claimY, new Color(80, 90, 60));
+                TxtMed(rewardStr, claimX + 8, claimY + 4, new Color(80, 90, 60));
+                Txt("COINS", claimX + 8 + rewardStr.Length * 12 + 4, claimY + 11, new Color(60, 68, 50));
             }
+            visIdx++;
         }
 
-        Txt("[ESC] BACK", cx - 30, SH - 36, new Color(100, 110, 160));
+        TxtMed("[ESC] BACK", cx - 60, SH - 36, new Color(100, 110, 160));
     }
 
     void HandleChallengesClick(bool click)
     {
         if (!click) return;
-        const int tileW = 560, tileH = 68, gapY = 10;
+        const int tileW = 560, tileH = 80, gapY = 10;
         int startX = SW / 2 - tileW / 2;
         int startY = 90;
 
+        int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
         {
-            int  ty      = startY + i * (tileH + gapY);
+            bool claimed = (_chalClaimed & (1L << i)) != 0;
+            if (claimed) continue;
+            if (visIdx >= 7) break;
+            int  ty      = startY + visIdx * (tileH + gapY);
             bool complete = ChalProgress(i) >= CHALLENGES[i].Target;
-            bool claimed  = (_chalClaimed & (1 << i)) != 0;
-            if (!complete || claimed) continue;
-            int claimX = startX + tileW - 130;
-            if (Clicked(click, claimX, ty, 120, tileH))
+            if (complete)
             {
-                _chalClaimed |= (1 << i);
-                _coins += CHALLENGES[i].Coins;
-                SaveGame();
-                return;
+                int claimX = startX + tileW - 140;
+                if (Clicked(click, claimX, ty, 130, tileH))
+                {
+                    _chalClaimed |= (1L << i);
+                    _coins += CHALLENGES[i].Coins;
+                    // Reset all when entire pool is claimed
+                    bool allDone = true;
+                    for (int j = 0; j < CHALLENGES.Length; j++)
+                        if ((_chalClaimed & (1L << j)) == 0) { allDone = false; break; }
+                    if (allDone) { _chalClaimed = 0; _chalActivated = 0; }
+                    SaveGame();
+                    return;
+                }
             }
+            visIdx++;
         }
     }
 
@@ -1193,105 +1392,143 @@ public class Game1 : Game
     {
         DrawMenuBg();
         int cx = SW / 2;
-        string title = "SHOP";
-        TxtBig(title, cx - title.Length * 6, 36, new Color(100, 140, 255));
-        string coinsStr = $"COINS: {_coins}";
-        Txt(coinsStr, cx - coinsStr.Length * 3, 62, new Color(255, 200, 50));
 
-        // ── Mystery Chest ────────────────────────────────────────────────────
-        const int chestPanW = 340, chestPanH = 92;
-        int chestX = cx - chestPanW / 2, chestY = 84;
+        // ── CS2-style case opening animation overlay ─────────────────────────
+        if (_chestAnimating)
+        {
+            R(0, 0, SW, SH, new Color(0, 0, 0, 180));
+
+            const int slotW = 128, slotH = 110, slotGap = 8;
+            int slotStep = slotW + slotGap;
+            float progress = Math.Min(_chestAnimTimer / CHEST_ANIM_DUR, 1f);
+            // Quartic ease-out: fast at start, very slow at end
+            float ease   = 1f - MathF.Pow(1f - progress, 4);
+            float scrollX = CHEST_TARGET_IDX * slotStep * ease;
+
+            int stripY = SH / 2 - slotH / 2;
+
+            // Strip background
+            R(0, stripY - 24, SW, slotH + 48, new Color(22, 24, 44));
+            R(0, stripY - 26, SW, 2, new Color(70, 90, 160));
+            R(0, stripY + slotH + 22, SW, 2, new Color(70, 90, 160));
+
+            // Draw infinite strip items via modulo indexing into _chestPool
+            int firstI = (int)Math.Floor((scrollX - SW * 0.6f) / slotStep);
+            int lastI  = (int)Math.Ceiling((scrollX + SW * 0.6f) / slotStep);
+            for (int i = firstI; i <= lastI; i++)
+            {
+                int poolIdx    = ((i % CHEST_POOL_SIZE) + CHEST_POOL_SIZE) % CHEST_POOL_SIZE;
+                int skinIdx    = _chestPool[poolIdx];
+                int itemCenterX = cx + (int)(i * slotStep - scrollX);
+                int itemX = itemCenterX - slotW / 2;
+
+                bool isLanded = progress >= 1f && i == CHEST_TARGET_IDX;
+                Color itemBg   = isLanded ? new Color(55, 45, 12)  : new Color(34, 38, 64);
+                Color itemEdge = isLanded ? new Color(255, 200, 50) : new Color(42, 48, 78);
+
+                R(itemX + 3, stripY + 3, slotW, slotH, new Color(0, 0, 0, 70));
+                R(itemX, stripY, slotW, slotH, itemBg);
+                R(itemX, stripY, slotW, 2, itemEdge);
+                R(itemX, stripY + slotH - 2, slotW, 2, itemEdge);
+                R(itemX, stripY, 2, slotH, itemEdge);
+                R(itemX + slotW - 2, stripY, 2, slotH, itemEdge);
+
+                Color sc = SkinColor(skinIdx, _menuTime);
+                DrawEllipse(itemCenterX, stripY + slotH / 2 - 12, 20, 20, sc);
+                string sn = SKINS[skinIdx].Name;
+                Txt(sn, itemCenterX - sn.Length * 3, stripY + slotH / 2 + 14, sc);
+            }
+
+            // Center marker lines
+            R(cx - 2, stripY - 22, 4, 18, new Color(255, 220, 50));
+            R(cx - 2, stripY + slotH + 4, 4, 18, new Color(255, 220, 50));
+
+            // Edge fade-out gradient
+            int fadeW = Math.Min(220, SW / 4);
+            for (int fx = 0; fx < fadeW; fx++)
+            {
+                int a = (int)(180 * (1f - (float)fx / fadeW));
+                R(fx, stripY - 24, 1, slotH + 48, new Color(0, 0, 0, a));
+                R(SW - 1 - fx, stripY - 24, 1, slotH + 48, new Color(0, 0, 0, a));
+            }
+
+            // Status text
+            if (progress >= 1f)
+            {
+                Color resultCol = SkinColor(_chestAnimPick, _menuTime);
+                string gotStr = _chestLastDuplicate
+                    ? $"DUPLICATE: {SKINS[_chestAnimPick].Name}"
+                    : $"NEW: {SKINS[_chestAnimPick].Name}!";
+                Color gotCol = _chestLastDuplicate ? new Color(130, 130, 150) : resultCol;
+                TxtBig(gotStr, cx - gotStr.Length * 6, stripY - 90, gotCol);
+                // Pulsing "click to continue" text
+                int pulse = (int)(_chestAnimTimer * 3f) % 2;
+                if (pulse == 0)
+                    TxtMed("CLICK TO CONTINUE", cx - 102, stripY + slotH + 50, new Color(180, 190, 220));
+            }
+            else
+            {
+                TxtMed("OPENING...", cx - 60, stripY + slotH + 50, new Color(120, 130, 170));
+            }
+            return;
+        }
+
+        // ── Normal shop view ─────────────────────────────────────────────────
+        string title = "SHOP";
+        TxtBig(title, cx - title.Length * 6, 28, new Color(100, 140, 255));
+
+        // Coins — top right, big
+        string coinsStr = $"COINS: {_coins}";
+        TxtBig(coinsStr, SW - coinsStr.Length * 12 - 20, 20, new Color(255, 200, 50));
+
+        // ── Chest panel ───────────────────────────────────────────────────────
+        const int chestPanW = 420, chestPanH = 100;
+        int chestX = cx - chestPanW / 2, chestY = SH / 2 - chestPanH / 2 - 20;
         bool canAffordChest = _coins >= CHEST_PRICE;
-        bool allOwned = !HasUnownedSkins();
-        bool hoverChest = _mousePos.X >= chestX && _mousePos.X <= chestX + chestPanW &&
+        bool hoverChest = canAffordChest &&
+                          _mousePos.X >= chestX && _mousePos.X <= chestX + chestPanW &&
                           _mousePos.Y >= chestY && _mousePos.Y <= chestY + chestPanH;
-        Color chestEdge = allOwned   ? new Color(55, 60, 95)
-                        : canAffordChest ? (hoverChest ? new Color(255, 220, 80) : new Color(200, 160, 40))
-                                         : new Color(70, 70, 55);
+
+        Color chestEdge = !canAffordChest ? new Color(70, 70, 55)
+                        : hoverChest      ? new Color(255, 220, 80)
+                                          : new Color(200, 160, 40);
+
         R(chestX + 3, chestY + 3, chestPanW, chestPanH, new Color(0, 0, 0, 70));
-        R(chestX, chestY, chestPanW, chestPanH, new Color(28, 30, 52));
+        R(chestX, chestY, chestPanW, chestPanH, new Color(40, 43, 68));
         R(chestX, chestY, chestPanW, 2, chestEdge);
         R(chestX, chestY + chestPanH - 2, chestPanW, 2, chestEdge);
         R(chestX, chestY, 2, chestPanH, chestEdge);
         R(chestX + chestPanW - 2, chestY, 2, chestPanH, chestEdge);
 
         // Chest icon
-        int cix = chestX + 46, ciy = chestY + chestPanH / 2;
-        R(cix - 22, ciy - 15, 44, 30, new Color(120, 80, 10));   // shadow
-        R(cix - 24, ciy - 17, 44, 30, new Color(210, 145, 25));  // body
-        R(cix - 24, ciy - 17, 44, 13, new Color(255, 195, 45));  // lid
-        R(cix - 24, ciy - 5,  44, 2,  new Color(90, 60, 5));     // lid seam
-        DrawEllipse(cix, ciy + 4, 5, 5, new Color(255, 215, 60)); // lock
+        int cix = chestX + 52, ciy = chestY + chestPanH / 2;
+        R(cix - 22, ciy - 13, 44, 30, new Color(120, 80, 10));
+        R(cix - 24, ciy - 15, 44, 30, new Color(210, 145, 25));
+        R(cix - 24, ciy - 15, 44, 13, new Color(255, 195, 45));
+        R(cix - 24, ciy - 3,  44, 2,  new Color(90, 60, 5));
+        DrawEllipse(cix, ciy + 6, 5, 5, new Color(255, 215, 60));
 
         // Chest text
-        Txt("MYSTERY CHEST", chestX + 80, chestY + 16, new Color(255, 200, 50));
-        Txt("OPEN TO GET A RANDOM SKIN", chestX + 80, chestY + 34, new Color(120, 130, 170));
-        if (allOwned)
-        {
-            Txt("ALL SKINS OWNED!", chestX + 80, chestY + 58, new Color(80, 160, 80));
-        }
-        else
+        int tx = chestX + 98;
+        TxtMed("MYSTERY CHEST", tx, chestY + 14, new Color(255, 200, 50));
         {
             string prStr = $"OPEN FOR {CHEST_PRICE} COINS";
             Color  prCol = canAffordChest ? (hoverChest ? Color.White : new Color(255, 200, 50))
                                           : new Color(80, 80, 70);
-            Txt(prStr, chestX + 80, chestY + 58, prCol);
+            TxtMed(prStr, tx, chestY + 46, prCol);
         }
 
-        // Last chest result
+        // Last result below chest
         if (_chestResult >= 0)
         {
-            string gotStr = $"YOU GOT: {SKINS[_chestResult].Name}!";
-            Txt(gotStr, cx - gotStr.Length * 3, chestY + chestPanH + 10, SKINS[_chestResult].Col);
-        }
-        else if (_chestResult == -1)
-        {
-            Txt("ALL SKINS ALREADY OWNED", cx - 66, chestY + chestPanH + 10, new Color(80, 160, 80));
-        }
-
-        // ── Skin grid (direct purchase) ──────────────────────────────────────
-        const int cols = 4, tileW = 190, tileH = 100, gapX = 14, gapY = 12;
-        int rows   = (SKINS.Length + cols - 1) / cols;
-        int gridW  = cols * tileW + (cols - 1) * gapX;
-        int startX = cx - gridW / 2;
-        int startY = chestY + chestPanH + 30;
-
-        for (int i = 0; i < SKINS.Length; i++)
-        {
-            int tx = startX + (i % cols) * (tileW + gapX);
-            int ty = startY + (i / cols) * (tileH + gapY);
-            bool owned  = SkinOwned(i);
-            bool canBuy = !owned && _coins >= SKINS[i].Price;
-
-            Color bg   = owned   ? new Color(26, 40, 26) : new Color(24, 28, 50);
-            Color edge = owned   ? new Color(65, 150, 65)
-                       : canBuy  ? new Color(90, 110, 180)
-                                 : new Color(44, 50, 80);
-
-            R(tx + 3, ty + 3, tileW, tileH, new Color(0, 0, 0, 60));
-            R(tx, ty, tileW, tileH, bg);
-            R(tx, ty, tileW, 2, edge);
-            R(tx, ty + tileH - 2, tileW, 2, edge);
-            R(tx, ty, 2, tileH, edge);
-            R(tx + tileW - 2, ty, 2, tileH, edge);
-
-            DrawEllipse(tx + tileW / 2, ty + 30, 18, 18, SKINS[i].Col);
-            string name = SKINS[i].Name;
-            Txt(name, tx + tileW / 2 - name.Length * 3, ty + 54, SKINS[i].Col);
-
-            if (owned)
-                Txt("OWNED", tx + tileW / 2 - 15, ty + 70, new Color(65, 170, 65));
-            else if (SKINS[i].Price == 0)
-                Txt("FREE", tx + tileW / 2 - 12, ty + 70, new Color(100, 200, 100));
-            else
-            {
-                string pr = $"{SKINS[i].Price}c";
-                Color  pc = canBuy ? new Color(255, 200, 50) : new Color(90, 90, 100);
-                Txt(pr, tx + tileW / 2 - pr.Length * 3, ty + 70, pc);
-            }
+            string gotStr = _chestLastDuplicate
+                ? $"LAST: {SKINS[_chestResult].Name} (DUPLICATE)"
+                : $"LAST: {SKINS[_chestResult].Name}";
+            Color gotCol = _chestLastDuplicate ? new Color(120, 120, 140) : SkinColor(_chestResult, _menuTime);
+            TxtMed(gotStr, cx - gotStr.Length * 6, chestY + chestPanH + 18, gotCol);
         }
 
-        Txt("[ESC] BACK", cx - 30, SH - 36, new Color(100, 110, 160));
+        TxtMed("[ESC] BACK", cx - 60, SH - 36, new Color(100, 110, 160));
     }
 
     void HandleShopClick(bool click)
@@ -1299,42 +1536,43 @@ public class Game1 : Game
         if (!click) return;
         int cx = SW / 2;
 
-        // Chest click
-        const int chestPanW = 340, chestPanH = 92;
-        int chestX = cx - chestPanW / 2, chestY = 84;
+        // Chest click → start CS2-style opening animation
+        const int chestPanW = 420, chestPanH = 100;
+        int chestX = cx - chestPanW / 2, chestY = SH / 2 - chestPanH / 2 - 20;
         if (Clicked(click, chestX, chestY, chestPanW, chestPanH))
         {
-            if (!HasUnownedSkins()) { _chestResult = -1; return; }
             if (_coins < CHEST_PRICE) return;
-            var unowned = new System.Collections.Generic.List<int>();
-            for (int i = 1; i < SKINS.Length - 1; i++)
-                if (!SkinOwned(i)) unowned.Add(i);
-            int pick = unowned[_rng.Next(unowned.Count)];
-            _coins -= CHEST_PRICE;
-            _ownedSkins |= (1 << pick);
-            _chestResult = pick;
-            SaveGame();
-            return;
-        }
 
-        // Direct skin purchase
-        const int cols = 4, tileW = 190, tileH = 100, gapX = 14, gapY = 12;
-        int gridW  = cols * tileW + (cols - 1) * gapX;
-        int startX = cx - gridW / 2;
-        int startY = chestY + chestPanH + 30;
-
-        for (int i = 0; i < SKINS.Length; i++)
-        {
-            int tx = startX + (i % cols) * (tileW + gapX);
-            int ty = startY + (i / cols) * (tileH + gapY);
-            if (!Clicked(click, tx, ty, tileW, tileH)) continue;
-            if (!SkinOwned(i) && _coins >= SKINS[i].Price)
+            // ── Weighted rarity: 5 % animated, 95 % regular ──────────────────
+            var regularPool  = new List<int>();
+            var animatedPool = new List<int>();
+            for (int i = 0; i < SKINS.Length; i++)
             {
-                _coins -= SKINS[i].Price;
-                _ownedSkins |= (1 << i);
-                SaveGame();
+                if (i == 0 || i == 8) continue;   // skip DEFAULT + SCARLET (always free)
+                if (SKINS[i].Animated) animatedPool.Add(i);
+                else                   regularPool.Add(i);
             }
-            break;
+            float roll = (float)_rng.NextDouble();
+            if (animatedPool.Count > 0 && roll < 0.05f)
+                _chestAnimPick = animatedPool[_rng.Next(animatedPool.Count)];
+            else
+                _chestAnimPick = regularPool[_rng.Next(regularPool.Count)];
+
+            _coins -= CHEST_PRICE;
+            SaveGame();   // save coin deduction immediately
+
+            // ── Build infinite-loop pool for animation strip ──────────────────
+            // All skins (incl. owned) appear in strip; target placed at CHEST_TARGET_IDX
+            var stripPool = new List<int>();
+            for (int i = 0; i < SKINS.Length; i++)
+                if (i != 0 && i != 8) stripPool.Add(i);  // exclude free skins from strip
+            _chestPool = new int[CHEST_POOL_SIZE];
+            for (int i = 0; i < CHEST_POOL_SIZE; i++)
+                _chestPool[i] = stripPool[_rng.Next(stripPool.Count)];
+            _chestPool[CHEST_TARGET_IDX % CHEST_POOL_SIZE] = _chestAnimPick;
+
+            _chestAnimTimer  = 0f;
+            _chestAnimating  = true;
         }
     }
 
@@ -1342,57 +1580,150 @@ public class Game1 : Game
     {
         DrawMenuBg();
         int cx = SW / 2;
-        string title = "YOUR SKIN";
-        TxtBig(title, cx - title.Length * 6, 36, new Color(100, 140, 255));
-        string sub = "SELECT THE COLOR OF YOUR CHARACTER";
-        Txt(sub, cx - sub.Length * 3, 66, new Color(100, 110, 160));
 
-        const int tileW = 260, tileH = 54, gapY = 10;
-        int startX = cx - tileW / 2;
-        int startY = 100;
-        int idx = 0;
+        // ── Title ─────────────────────────────────────────────────────────────
+        string title = "CONFIG";
+        TxtBig(title, cx - title.Length * 6, 30, new Color(100, 140, 255));
 
-        for (int i = 0; i < SKINS.Length; i++)
+        // ── Tab bar ───────────────────────────────────────────────────────────
+        string[] tabLabels = { "SKIN" };
+        const int tabW = 150, tabH = 32, tabGap = 8;
+        int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
+        int tabStartX  = cx - totalTabsW / 2;
+        int tabY       = 60;
+
+        for (int t = 0; t < tabLabels.Length; t++)
         {
-            if (!SkinOwned(i)) continue;
-            int ty       = startY + idx * (tileH + gapY);
-            bool selected = i == _mySkin;
-            Color bg   = selected ? new Color(38, 58, 110) : new Color(26, 30, 58);
-            Color edge = selected ? new Color(110, 150, 255) : new Color(50, 60, 100);
-
-            R(startX + 3, ty + 3, tileW, tileH, new Color(0, 0, 0, 60));
-            R(startX, ty, tileW, tileH, bg);
-            R(startX, ty, tileW, 2, edge);
-            R(startX, ty + tileH - 2, tileW, 2, edge);
-            R(startX, ty, 2, tileH, edge);
-            R(startX + tileW - 2, ty, 2, tileH, edge);
-
-            DrawEllipse(startX + 28, ty + tileH / 2, 16, 16, SKINS[i].Col);
-            Txt(SKINS[i].Name, startX + 52, ty + tileH / 2 - 4, SKINS[i].Col);
-            if (selected)
-                R(startX + tileW - 16, ty + tileH / 2 - 5, 10, 10, new Color(110, 150, 255));
-            idx++;
+            int tx     = tabStartX + t * (tabW + tabGap);
+            bool sel   = _configTab == t;
+            bool hover = _mousePos.X >= tx && _mousePos.X <= tx + tabW &&
+                         _mousePos.Y >= tabY && _mousePos.Y <= tabY + tabH;
+            Color tbg  = sel   ? new Color(50, 70, 140)
+                       : hover ? new Color(34, 42, 90)
+                               : new Color(34, 38, 66);
+            Color tedge = sel  ? new Color(110, 150, 255) : new Color(44, 52, 90);
+            R(tx + 2, tabY + 2, tabW, tabH, new Color(0, 0, 0, 50));
+            R(tx, tabY, tabW, tabH, tbg);
+            R(tx, tabY, tabW, 2, tedge);
+            R(tx, tabY + tabH - 2, tabW, 2, sel ? new Color(110, 150, 255) : new Color(34, 38, 66));
+            R(tx, tabY, 2, tabH, tedge);
+            R(tx + tabW - 2, tabY, 2, tabH, tedge);
+            Color tc = sel ? Color.White : new Color(140, 150, 200);
+            TxtMed(tabLabels[t], tx + tabW / 2 - tabLabels[t].Length * 6, tabY + tabH / 2 - 7, tc);
         }
 
-        if (idx == 0)
-            Txt("COMPLETE CHALLENGES TO UNLOCK SKINS", cx - 105, startY + 20, new Color(80, 90, 130));
+        // Separator line under tabs
+        int contentY = tabY + tabH + 10;
+        R(cx - totalTabsW / 2, contentY, totalTabsW, 1, new Color(50, 60, 100));
+        contentY += 14;
 
-        Txt("[ESC] BACK", cx - 30, SH - 36, new Color(100, 110, 160));
+        // ── SKIN tab ──────────────────────────────────────────────────────────
+        if (_configTab == 0)
+        {
+            const int tileW = 300, tileH = 54, gapY = 10;
+            int startX = cx - tileW / 2;
+            int idx = 0;
+
+            // Count owned skins for max-scroll clamp
+            int ownedCount = 0;
+            for (int i = 0; i < SKINS.Length; i++) if (SkinOwned(i)) ownedCount++;
+            int listH     = ownedCount * (tileH + gapY);
+            int visH      = SH - contentY - 50;
+            int maxScroll = Math.Max(0, listH - visH);
+            if (_configScrollY > maxScroll) _configScrollY = maxScroll;
+
+            for (int i = 0; i < SKINS.Length; i++)
+            {
+                if (!SkinOwned(i)) continue;
+                int ty = contentY + idx * (tileH + gapY) - _configScrollY;
+                idx++;
+                if (ty + tileH < contentY || ty > SH - 50) continue; // clipped
+
+                bool selected = i == _mySkin;
+                bool animated = SKINS[i].Animated;
+                Color bg   = selected ? new Color(50, 70, 130) : new Color(38, 42, 72);
+                Color edge = animated  ? new Color(200, 160, 40)
+                           : selected  ? new Color(110, 150, 255)
+                                       : new Color(50, 60, 100);
+
+                R(startX + 3, ty + 3, tileW, tileH, new Color(0, 0, 0, 60));
+                R(startX, ty, tileW, tileH, bg);
+                R(startX, ty, tileW, 2, edge);
+                R(startX, ty + tileH - 2, tileW, 2, edge);
+                R(startX, ty, 2, tileH, edge);
+                R(startX + tileW - 2, ty, 2, tileH, edge);
+                // Extra gold inner glow for animated skins
+                if (animated)
+                {
+                    R(startX + 1, ty + 1, tileW - 2, 2, new Color(255, 200, 50, 60));
+                    R(startX + 1, ty + tileH - 4, tileW - 2, 2, new Color(255, 200, 50, 60));
+                }
+
+                Color sc = SkinColor(i, _menuTime);
+                DrawEllipse(startX + 28, ty + tileH / 2, 16, 16, sc);
+                TxtMed(SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, sc);
+                if (animated)
+                    TxtMed("★", startX + tileW - 32, ty + tileH / 2 - 7, new Color(255, 200, 50));
+                if (selected)
+                {
+                    int activeOff = animated ? 44 : 14;
+                    const string activeStr = "ACTIVE";
+                    int activeX = startX + tileW - activeStr.Length * 12 - activeOff;
+                    TxtMed(activeStr, activeX, ty + tileH / 2 - 7, new Color(110, 150, 255));
+                }
+            }
+
+            if (ownedCount == 0)
+                TxtMed("COMPLETE CHALLENGES TO UNLOCK SKINS", cx - 210, contentY + 20, new Color(80, 90, 130));
+
+            // Scrollbar hint
+            if (maxScroll > 0)
+            {
+                int sbX = startX + tileW + 8;
+                int sbH = visH;
+                int thumbH = Math.Max(24, sbH * visH / listH);
+                int thumbY = contentY + (sbH - thumbH) * _configScrollY / maxScroll;
+                R(sbX, contentY, 4, sbH, new Color(30, 35, 65));
+                R(sbX, thumbY, 4, thumbH, new Color(80, 100, 180));
+            }
+        }
+
+
+        TxtMed("[ESC] BACK", cx - 60, SH - 36, new Color(100, 110, 160));
     }
 
     void HandleSkinConfigClick(bool click)
     {
         if (!click) return;
-        const int tileW = 260, tileH = 54, gapY = 10;
-        int startX = SW / 2 - tileW / 2;
-        int startY = 100, idx = 0;
+        int cx = SW / 2;
+
+        // Tab clicks
+        string[] tabLabels = { "SKIN" };
+        const int tabW = 150, tabH = 32, tabGap = 8;
+        int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
+        int tabStartX  = cx - totalTabsW / 2;
+        int tabY       = 60;
+
+        for (int t = 0; t < tabLabels.Length; t++)
+        {
+            int tx = tabStartX + t * (tabW + tabGap);
+            if (Clicked(click, tx, tabY, tabW, tabH)) { _configTab = t; return; }
+        }
+
+        // Skin selection (only active on SKIN tab)
+        if (_configTab != 0) return;
+
+        int contentY = tabY + tabH + 24;
+        const int tileW = 300, tileH = 54, gapY = 10;
+        int startX = cx - tileW / 2, idx = 0;
 
         for (int i = 0; i < SKINS.Length; i++)
         {
             if (!SkinOwned(i)) continue;
-            int ty = startY + idx * (tileH + gapY);
-            if (Clicked(click, startX, ty, tileW, tileH)) { _mySkin = i; SaveGame(); return; }
+            int ty = contentY + idx * (tileH + gapY) - _configScrollY;
             idx++;
+            if (ty + tileH < contentY || ty > SH - 50) continue;
+            if (Clicked(click, startX, ty, tileW, tileH)) { _mySkin = i; SaveGame(); return; }
         }
     }
 
@@ -1407,7 +1738,8 @@ public class Game1 : Game
             if (ver < 2) return;
             _playerName      = br.ReadString();
             _mySkin          = Math.Clamp(br.ReadInt32(), 0, SKINS.Length - 1);
-            _chalClaimed     = br.ReadInt32();
+            // v2/v3 stored chalClaimed as int; v4+ stores as long
+            _chalClaimed     = ver >= 4 ? br.ReadInt64() : br.ReadInt32();
             _statWins        = br.ReadInt32();
             _statHits        = br.ReadInt32();
             _statDmgDealt    = br.ReadInt32();
@@ -1419,7 +1751,13 @@ public class Game1 : Game
             {
                 _coins      = br.ReadInt32();
                 _ownedSkins = br.ReadInt32();
-                _ownedSkins |= (1 << 0) | (1 << 8);   // ensure defaults always owned
+                _ownedSkins |= (1 << 0) | (1 << 8);
+            }
+            if (ver >= 4)
+            {
+                _chalActivated = br.ReadInt64();
+                for (int i = 0; i < _chalBaselines.Length; i++)
+                    _chalBaselines[i] = br.ReadInt32();
             }
         }
         catch { }
@@ -1431,10 +1769,10 @@ public class Game1 : Game
         {
             string path = Path.Combine(AppContext.BaseDirectory, "save.dat");
             using var bw = new BinaryWriter(File.Create(path));
-            bw.Write((byte)3);
+            bw.Write((byte)4);
             bw.Write(_playerName);
             bw.Write(_mySkin);
-            bw.Write(_chalClaimed);
+            bw.Write(_chalClaimed);      // long (8 bytes)
             bw.Write(_statWins);
             bw.Write(_statHits);
             bw.Write(_statDmgDealt);
@@ -1444,6 +1782,8 @@ public class Game1 : Game
             bw.Write(_statCurStreak);
             bw.Write(_coins);
             bw.Write(_ownedSkins);
+            bw.Write(_chalActivated);    // long (8 bytes)
+            foreach (int b in _chalBaselines) bw.Write(b);
         }
         catch { }
     }
@@ -1452,7 +1792,7 @@ public class Game1 : Game
 
     void DrawLobby()
     {
-        R(0, 0, SW, SH, new Color(18, 20, 35));
+        R(0, 0, SW, SH, new Color(30, 33, 52));
         for (int x = 0; x < SW; x += 80) R(x, 0, 1, SH, new Color(27, 30, 50));
         for (int y = 0; y < SH; y += 80) R(0, y, SW, 1, new Color(27, 30, 50));
 
@@ -1461,10 +1801,10 @@ public class Game1 : Game
         TxtBig("MULTIPLAYER", cx - 66, cy - 200, new Color(100, 140, 255));
 
         // ── Your code (top section) ───────────────────────────────────────
-        Txt("YOUR CODE", cx - 27, cy - 155, new Color(120, 130, 180));
+        TxtMed("YOUR CODE", cx - 54, cy - 155, new Color(120, 130, 180));
         string myCodeStr = _myCode.ToString();
         TxtBig(myCodeStr, cx - myCodeStr.Length * 6, cy - 130, new Color(100, 220, 130));
-        Txt("SHARE THIS WITH A FRIEND", cx - 72, cy - 104, new Color(70, 80, 120));
+        TxtMed("SHARE THIS WITH A FRIEND", cx - 144, cy - 104, new Color(70, 80, 120));
 
         // Divider
         R(cx - 100, cy - 80, 200, 1, new Color(40, 48, 80));
@@ -1472,7 +1812,7 @@ public class Game1 : Game
         // ── Join section (bottom section) ─────────────────────────────────
         if (!_net.IsSeeking)
         {
-            Txt("ENTER FRIEND'S CODE:", cx - 60, cy - 62, new Color(160, 170, 210));
+            TxtMed("ENTER FRIEND'S CODE:", cx - 120, cy - 62, new Color(160, 170, 210));
 
             // Input box
             int bw = 108, bh = 30;
@@ -1482,24 +1822,23 @@ public class Game1 : Game
             TxtBig(display, cx - bw/2 + 10, cy - 28, Color.White);
 
             if (_codeInput.Length == 4)
-                Txt("[ENTER] SEARCH", cx - 42, cy + 12, new Color(100, 220, 100));
+                TxtMed("[ENTER] SEARCH", cx - 84, cy + 12, new Color(100, 220, 100));
             else
-                Txt("[TYPE 4 DIGITS]", cx - 45, cy + 12, new Color(70, 80, 120));
+                TxtMed("[TYPE 4 DIGITS]", cx - 90, cy + 12, new Color(70, 80, 120));
         }
         else
         {
             // Searching status
             string status = $"SEARCHING FOR {_codeInput}...";
-            Txt(status, cx - status.Length * 3, cy - 50, new Color(255, 200, 50));
-            Txt("MAKE SURE YOUR FRIEND IS IN THE LOBBY", cx - 111, cy - 24, new Color(70, 80, 120));
+            TxtMed(status, cx - status.Length * 6, cy - 50, new Color(255, 200, 50));
+            TxtMed("MAKE SURE YOUR FRIEND IS IN THE LOBBY", cx - 222, cy - 24, new Color(70, 80, 120));
         }
 
         // ── Always-visible: waiting indicator ────────────────────────────
         R(cx - 100, cy + 40, 200, 1, new Color(40, 48, 80));
-        Txt("WAITING FOR FRIEND TO ENTER YOUR CODE",
-            cx - 111, cy + 50, new Color(60, 70, 110));
+        TxtMed("WAITING FOR FRIEND TO ENTER YOUR CODE", cx - 222, cy + 50, new Color(60, 70, 110));
 
-        Txt("[ESC] BACK TO MENU", cx - 54, cy + 80, new Color(100, 110, 160));
+        TxtMed("[ESC] BACK TO MENU", cx - 108, cy + 80, new Color(100, 110, 160));
     }
 
     // ── Attack animation ─────────────────────────────────────────────────────
@@ -1573,6 +1912,9 @@ public class Game1 : Game
 
     void Txt(string t, int x, int y, Color c)
     { DrawPx(t, x+1, y+1, new Color(0,0,0,100), 1); DrawPx(t, x, y, c, 1); }
+
+    void TxtMed(string t, int x, int y, Color c)
+    { DrawPx(t, x+1, y+1, new Color(0,0,0,120), 2); DrawPx(t, x, y, c, 2); }
 
     void TxtBig(string t, int x, int y, Color c)
     { DrawPx(t, x+2, y+2, new Color(0,0,0,100), 2); DrawPx(t, x, y, c, 2); }
