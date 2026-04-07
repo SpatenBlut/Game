@@ -190,12 +190,15 @@ public partial class Game1
         DrawEllipse(cx, bcy + ry / 3, Math.Max(1, rx - (int)(3*z)), Math.Max(1, ry / 2),
                     new Color(0, 0, 0, 30));
 
+        bool drawEyes = p.Id != 1 || _showEyes;
+
         int hlRx = Math.Max(1, (int)(rx * 0.42f));
         int hlRy = Math.Max(1, (int)(ry * 0.35f));
-        DrawEllipse(cx - (int)(rx * 0.25f), bcy - (int)(ry * 0.32f), hlRx, hlRy,
-                    new Color(255, 255, 255, 60));
+        if (drawEyes)
+            DrawEllipse(cx - (int)(rx * 0.25f), bcy - (int)(ry * 0.32f), hlRx, hlRy,
+                        new Color(255, 255, 255, 60));
 
-        if (_showEyes)
+        if (drawEyes)
         {
             int es        = Math.Max(3, (int)(6f * z));
             int eyeY      = bcy - (int)(ry * 0.18f);
@@ -212,7 +215,7 @@ public partial class Game1
             DrawEllipse(cx + eyeSpread + pupilOff - 1, eyeY - 1, ss, ss, new Color(255, 255, 255, 210));
         }
 
-        if (_showEyes && p.Hitstun > 0)
+        if (drawEyes && p.Hitstun > 0)
         {
             int es2 = Math.Max(3, (int)(6f * z));
             int eyeY2 = bcy - (int)(ry * 0.18f);
