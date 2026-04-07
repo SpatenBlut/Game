@@ -20,6 +20,7 @@ public class Player
     public const byte AIM_LEFT  = 149;
 
     public int     Id;
+    public int     SkinIdx;
     public Vector2 Pos, Vel;
     public Color   Color;
     public float   Damage;

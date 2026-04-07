@@ -1,0 +1,9 @@
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/App2
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/App2.dll
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/App2.deps.json
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/App2.runtimeconfig.json
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/App2.pdb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/MonoGame.Framework.dll
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/NVorbis.dll
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/libopenal.so
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/publish/libSDL2-2.0.so.0
