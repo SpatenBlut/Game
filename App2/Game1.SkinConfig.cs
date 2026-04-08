@@ -109,8 +109,8 @@ public partial class Game1
 
                 bool owned      = SkinOwned(i);
                 bool selected   = i == _mySkin;
-                bool legendary  = i == 17 || i == 18 || i == 19;
-                bool rare       = i == 14 || i == 15 || i == 16;
+                bool legendary  = i == SKIN_CASEHARDENED || i == SKIN_DAMASCUS || i == SKIN_2145;
+                bool rare       = i == SKIN_RAINBOW || i == SKIN_AURORA || i == SKIN_MOLTEN;
                 Color bg   = !owned    ? new Color(22, 24, 40)
                            : selected  ? new Color(50, 70, 130)
                                        : new Color(38, 42, 72);
@@ -132,7 +132,7 @@ public partial class Game1
                     Color sc = SkinColor(i, _menuTime);
                     DrawSkinEllipse(startX + 28, ty + tileH / 2, 16, 16, i, _menuTime);
                     TxtMed(SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, sc);
-                    if (rare && i != 17)
+                    if (rare && i != SKIN_CASEHARDENED)
                         TxtMed("★", startX + tileW - 32, ty + tileH / 2 - 7, new Color(255, 200, 50));
                     if (selected)
                         DrawEllipse(startX + tileW - 14, ty + tileH / 2, 5, 5, new Color(100, 160, 255));
@@ -246,7 +246,7 @@ public partial class Game1
                         if (Clicked(click, tx, ty, tileSize, tileSize) && CHPatternOwned(pidx))
                         {
                             _myCHPattern = pidx;
-                            _mySkin = 17;
+                            _mySkin = SKIN_CASEHARDENED;
                             SaveGame();
                             hitTile = true;
                         }
@@ -306,7 +306,7 @@ public partial class Game1
             idx++;
             if (ty + tileH < contentY || ty > SH - 50) continue;
             if (!SkinOwned(i)) continue;
-            if (i == 17 && rightClick && Clicked(true, startX, ty, tileW, tileH))
+            if (i == SKIN_CASEHARDENED && rightClick && Clicked(true, startX, ty, tileW, tileH))
             {
                 _showCHPicker = true;
                 return;

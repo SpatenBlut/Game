@@ -143,10 +143,10 @@ public partial class Game1
 
     void DrawSkinEllipse(int cx, int cy, int rx, int ry, int skinIdx, float time, int ox = 0, int oy = 0)
     {
-        if      (skinIdx == 17) DrawCaseHardenedEllipse(cx + ox, cy + oy, rx, ry, _myCHPattern);
-        else if (skinIdx == 18) DrawDamascusEllipse(cx + ox, cy + oy, rx, ry);
-        else if (skinIdx == 19) DrawSkin2145Ellipse(cx + ox, cy + oy, rx, ry);
-        else                    DrawEllipse(cx, cy, rx, ry, SkinColor(skinIdx, time), ox, oy);
+        if      (skinIdx == SKIN_CASEHARDENED) DrawCaseHardenedEllipse(cx + ox, cy + oy, rx, ry, _myCHPattern);
+        else if (skinIdx == SKIN_DAMASCUS)     DrawDamascusEllipse(cx + ox, cy + oy, rx, ry);
+        else if (skinIdx == SKIN_2145)         DrawSkin2145Ellipse(cx + ox, cy + oy, rx, ry);
+        else                                   DrawEllipse(cx, cy, rx, ry, SkinColor(skinIdx, time), ox, oy);
     }
 
     void DrawSkinBodyEllipse(int cx, int cy, int rx, int ry, int skinIdx, Color col, float time)
@@ -154,10 +154,10 @@ public partial class Game1
         bool flashing = col.B == 255 && col.G > 180;
         bool hitstun  = col.R > 200 && col.G > 200 && col.B > 200;
         if (flashing || hitstun) { DrawEllipse(cx, cy, rx, ry, col); return; }
-        if      (skinIdx == 17) DrawCaseHardenedEllipse(cx, cy, rx, ry, _myCHPattern);
-        else if (skinIdx == 18) DrawDamascusEllipse(cx, cy, rx, ry);
-        else if (skinIdx == 19) DrawSkin2145Ellipse(cx, cy, rx, ry);
-        else                    DrawEllipse(cx, cy, rx, ry, col);
+        if      (skinIdx == SKIN_CASEHARDENED) DrawCaseHardenedEllipse(cx, cy, rx, ry, _myCHPattern);
+        else if (skinIdx == SKIN_DAMASCUS)     DrawDamascusEllipse(cx, cy, rx, ry);
+        else if (skinIdx == SKIN_2145)         DrawSkin2145Ellipse(cx, cy, rx, ry);
+        else                                   DrawEllipse(cx, cy, rx, ry, col);
     }
 
     void DrawPlayer(Player p)

@@ -20,7 +20,6 @@ public partial class Game1
     const int TERM_MAX_LINES = 500;
     const int TERM_H         = 220;
 
-    enum GameState { Menu, NameEntry, PlayMenu, Shop, Challenges, SkinConfig, Lobby, Playing, GameOver, RoundOver }
     GameState _state = GameState.Menu;
     int       _roundWinner = -1;
     string    _lastKillText = "";
@@ -62,6 +61,14 @@ public partial class Game1
         // ── index 19 — 2145 (texture-based pattern, legendary) ───────────────
         ("2145",           new Color(180, 140, 255), Color.White,              false),
     };
+
+    // Named skin index constants — use these instead of magic numbers
+    const int SKIN_RAINBOW      = 14;
+    const int SKIN_AURORA       = 15;
+    const int SKIN_MOLTEN       = 16;
+    const int SKIN_CASEHARDENED = 17;
+    const int SKIN_DAMASCUS     = 18;
+    const int SKIN_2145         = 19;
 
     static readonly (string Name, Color Col)[] ARM_SKINS =
     {

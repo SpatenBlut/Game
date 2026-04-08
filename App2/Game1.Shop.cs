@@ -6,7 +6,7 @@ public partial class Game1
 {
     string ChestDisplayName(int i)
     {
-        if (i == 17 && _chestPickedPattern >= 0)
+        if (i == SKIN_CASEHARDENED && _chestPickedPattern >= 0)
             return $"CASE HARDENED #{_chestPickedPattern + 1}";
         return SKINS[i].Name;
     }
@@ -14,7 +14,7 @@ public partial class Game1
     // Called once when the chest animation finishes to award the skin/pattern
     void AwardChestResult()
     {
-        if (_chestAnimPick == 17) // Case Hardened — award one specific pattern
+        if (_chestAnimPick == SKIN_CASEHARDENED) // Case Hardened — award one specific pattern
         {
             _chestLastDuplicate = CHPatternOwned(_chestPickedPattern);
             if (!_chestLastDuplicate)
@@ -65,8 +65,8 @@ public partial class Game1
                 int itemCenterX = cx + (int)(i * slotStep - scrollX);
                 int itemX = itemCenterX - slotW / 2;
 
-                bool isLegendary = skinIdx == 17 || skinIdx == 18;
-                bool isRare      = skinIdx == 14 || skinIdx == 15 || skinIdx == 16;
+                bool isLegendary = skinIdx == SKIN_CASEHARDENED || skinIdx == SKIN_DAMASCUS;
+                bool isRare      = skinIdx == SKIN_RAINBOW || skinIdx == SKIN_AURORA || skinIdx == SKIN_MOLTEN;
                 bool isLanded    = progress >= 1f && i == CHEST_TARGET_IDX;
                 Color itemBg   = isLanded ? new Color(55, 45, 12)  : new Color(34, 38, 64);
                 Color itemEdge = isLanded    ? new Color(255, 200, 50)
@@ -185,11 +185,9 @@ public partial class Game1
             if (_coins < CHEST_PRICE) return;
 
             // ── Weighted rarity ───────────────────────────────────────────────
-            // 0.5% LEGENDARY (Case Hardened + Damascus)
+            // 0.5% LEGENDARY (Case Hardened + Damascus + 2145)
             // 2.0% RARE      (Molten + Aurora + Rainbow)
             // 97.5% COMMON
-            const int SKIN_RAINBOW = 14, SKIN_AURORA = 15, SKIN_MOLTEN = 16,
-                      SKIN_CASEHARDENED = 17, SKIN_DAMASCUS = 18, SKIN_2145 = 19;
             var legendaryPool = new List<int> { SKIN_CASEHARDENED, SKIN_DAMASCUS, SKIN_2145 };
             var rarePool      = new List<int> { SKIN_RAINBOW, SKIN_AURORA, SKIN_MOLTEN };
             var commonPool    = new List<int>();
@@ -207,7 +205,7 @@ public partial class Game1
             else
                 _chestAnimPick = commonPool[_rng.Next(commonPool.Count)];
 
-            // For Case Hardened: pick one random unowned pattern (or any if all owned)
+            // For Case Hardened: pick one random unowned pattern (or random if all owned)
             if (_chestAnimPick == SKIN_CASEHARDENED)
             {
                 var unowned = new System.Collections.Generic.List<int>();
