@@ -67,15 +67,27 @@ public class BotController
 
         // ── Ausweichen ────────────────────────────────────────────────────
         bool wantDodge = false;
-        if (bot.Grounded && bot.DodgeCD <= 0f && bot.Hitstun > 0.05f
-            && _rng.NextDouble() < 0.55)
+        if (bot.DodgeCD <= 0f && bot.Hitstun > 0.05f && _rng.NextDouble() < 0.55)
         {
-            wantDodge        = true;
-            _reactionDelay   = 0.18f;
+            wantDodge      = true;
+            _reactionDelay = 0.18f;
         }
 
-        // ── Aim-Winkel (Knockback-Richtung) ───────────────────────────────
-        byte aimAngle = dx >= 0f ? Player.AIM_RIGHT : Player.AIM_LEFT;
+        // ── Aim-Winkel ────────────────────────────────────────────────────
+        // Beim Dodge: weg vom Gegner und leicht nach oben
+        // Beim Angriff: Richtung Gegner
+        byte aimAngle;
+        if (wantDodge)
+        {
+            float awayX = dx <= 0 ? 1f : -1f;
+            float awayY = -0.5f;
+            float ang   = MathF.Atan2(awayY, awayX);
+            aimAngle    = (byte)((int)(ang / (MathF.PI * 2f) * 256f + 256f) & 0xFF);
+        }
+        else
+        {
+            aimAngle = dx >= 0f ? Player.AIM_RIGHT : Player.AIM_LEFT;
+        }
 
         // ── Input-Byte zusammenbauen ──────────────────────────────────────
         byte b = 0;

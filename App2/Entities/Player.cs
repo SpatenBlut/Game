@@ -7,7 +7,9 @@ public class Player
 {
     public const float W = 42f, H = 58f;
     public const int   MAX_STOCKS = 3;
-    public const float DODGE_CD      = 1.2f;
+    public const float DODGE_CD       = 5.0f;
+    public const float DASH_DUR       = 0.14f;
+    public const float DASH_SPEED     = 880f;
     public const float ATK_DUR       = 0.30f;  // Gesamtdauer Animation
     public const float ATK_HITBOX_DUR = 0.10f; // Aktives Trefferfenster
     public const float GRAVITY    = 2100f;
@@ -48,7 +50,7 @@ public class Player
     public float   HitboxHalfW, HitboxHalfH, HitboxAngle;
 
     Vector2 _spawn;
-    float   _coyote, _jBuf;
+    float   _coyote, _jBuf, _dashTimer;
     bool    _touchWallL, _touchWallR;
 
     public Player(int id, Vector2 spawn, Color col)
@@ -101,10 +103,11 @@ public class Player
         bool attack = input.HeavyAttack;
         bool dodge  = input.Dodge;
 
-        if (InvTime > 0) InvTime -= dt;
-        if (DodgeCD > 0) DodgeCD -= dt;
-        if (AtkCD   > 0) AtkCD   -= dt;
-        if (Hitstun > 0) Hitstun -= dt;
+        if (InvTime    > 0) InvTime    -= dt;
+        if (DodgeCD    > 0) DodgeCD    -= dt;
+        if (AtkCD      > 0) AtkCD      -= dt;
+        if (Hitstun    > 0) Hitstun    -= dt;
+        if (_dashTimer > 0) _dashTimer -= dt;
         SX += (1f-SX) * 14f*dt;
         SY += (1f-SY) * 14f*dt;
 
@@ -162,21 +165,31 @@ public class Player
         }
 
         float tVX = l ? -SPEED : r ? SPEED : 0f;
-        if (!AttackActive)
+        if (!AttackActive && _dashTimer <= 0)
         {
             if (l) FacingRight=false;
             if (r) FacingRight=true;
         }
 
-        if (Grounded) Vel.X += (tVX-Vel.X)*0.88f;
-        else          Vel.X += (tVX-Vel.X)*dt*22f;
-
-        if (dodge && DodgeCD<=0 && Grounded)
+        // Bewegungs-Override nur außerhalb des Dash-Fensters
+        if (_dashTimer <= 0)
         {
-            float dir = r?1f:l?-1f:FacingRight?1f:-1f;
-            Vel.X=dir*950f; InvTime=0.32f; DodgeCD=DODGE_CD;
-            SX=dir>0?1.5f:0.65f; SY=0.65f;
-            // Sichtbarer Dodge-Partikeleffekt
+            if (Grounded) Vel.X += (tVX-Vel.X)*0.88f;
+            else          Vel.X += (tVX-Vel.X)*dt*22f;
+        }
+
+        if (dodge && DodgeCD <= 0)
+        {
+            var dashDir = DecodeAim(input.AimAngle);
+            Vel         = dashDir * DASH_SPEED;
+            InvTime     = 0.30f;
+            DodgeCD     = DODGE_CD;
+            _dashTimer  = DASH_DUR;
+            FacingRight = dashDir.X >= 0;
+            // Squash/Stretch entlang der Dash-Richtung
+            float absX = MathF.Abs(dashDir.X), absY = MathF.Abs(dashDir.Y);
+            if (absX >= absY) { SX = dashDir.X > 0 ? 1.55f : 0.60f; SY = 0.68f; }
+            else              { SX = 0.75f; SY = dashDir.Y < 0 ? 0.62f : 1.45f; }
             game.SpawnBurst(Pos, new Color((int)Color.R, (int)Color.G, (int)Color.B, 200), 12);
         }
         else if (attack && !AttackActive && AtkCD<=0)
