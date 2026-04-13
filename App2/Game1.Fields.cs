@@ -8,6 +8,10 @@ public partial class Game1
     GraphicsDeviceManager _graphics;
     SpriteBatch           _spriteBatch;
     Texture2D             _pixel;
+    SpriteFont _fontSmall;
+    SpriteFont _fontMed;
+    SpriteFont _fontBig;
+    SpriteFont _fontHuge;
 
     bool _debugOpen = false;
     const int DEBUG_W = 285;
@@ -224,6 +228,11 @@ public partial class Game1
     float   _chestAnimTimer     = 0f;
     int     _chestAnimPick      = -1;
     int[]   _chestPool          = null;
+    bool    _chestIsArm         = false;  // true = current animation is arm chest
+
+    long    _ownedArmSkins          = (1L << 0);  // DEFAULT always owned
+    int     _armChestResult         = -2;
+    bool    _armChestLastDuplicate  = false;
 
     float _menuTime = 0f;
 

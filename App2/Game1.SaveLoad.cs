@@ -47,6 +47,10 @@ public partial class Game1
                 _myArmSkin = Math.Clamp(br.ReadInt32(), 0, ARM_SKINS.Length - 1);
             if (ver >= 9)
                 _showEyes = br.ReadBoolean();
+            if (ver >= 10)
+                _ownedArmSkins = br.ReadInt64();
+            _ownedArmSkins |= (1L << 0);  // DEFAULT always free
+            if (!ArmSkinOwned(_myArmSkin)) _myArmSkin = 0;
         }
         catch { }
     }
@@ -60,7 +64,7 @@ public partial class Game1
                 "BRAWLHAVEN", "save.dat");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             using var bw = new BinaryWriter(File.Create(path));
-            bw.Write((byte)9);
+            bw.Write((byte)10);
             bw.Write(_playerName);
             bw.Write(_mySkin);
             bw.Write(_chalClaimed);
@@ -80,6 +84,7 @@ public partial class Game1
             bw.Write(_ownedCHPatternsHi);
             bw.Write(_myArmSkin);
             bw.Write(_showEyes);
+            bw.Write(_ownedArmSkins);
         }
         catch { }
     }

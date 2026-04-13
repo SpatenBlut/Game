@@ -151,13 +151,19 @@ public partial class Game1
 
     void DrawSkinBodyEllipse(int cx, int cy, int rx, int ry, int skinIdx, Color col, float time)
     {
-        bool flashing = col.B == 255 && col.G > 180;
-        bool hitstun  = col.R > 200 && col.G > 200 && col.B > 200;
-        if (flashing || hitstun) { DrawEllipse(cx, cy, rx, ry, col); return; }
+        bool flashing    = col.B == 255 && col.G > 180;
+        bool hitstun     = col.R > 200 && col.G > 200 && col.B > 200;
+        bool isImageSkin = skinIdx == SKIN_CASEHARDENED || skinIdx == SKIN_DAMASCUS || skinIdx == SKIN_2145;
+
+        if ((flashing || hitstun) && !isImageSkin) { DrawEllipse(cx, cy, rx, ry, col); return; }
+
         if      (skinIdx == SKIN_CASEHARDENED) DrawCaseHardenedEllipse(cx, cy, rx, ry, _myCHPattern);
         else if (skinIdx == SKIN_DAMASCUS)     DrawDamascusEllipse(cx, cy, rx, ry);
         else if (skinIdx == SKIN_2145)         DrawSkin2145Ellipse(cx, cy, rx, ry);
         else                                   DrawEllipse(cx, cy, rx, ry, col);
+
+        if ((flashing || hitstun) && isImageSkin)
+            DrawEllipse(cx, cy, rx, ry, new Color(255, 255, 255, 130));
     }
 
     void DrawPlayer(Player p)
@@ -228,11 +234,11 @@ public partial class Game1
         if (nameTag.Length > 0)
         {
             Color nameCol = p.Id == 1 ? new Color(80, 220, 80) : new Color(220, 80, 80);
-            TxtBig(nameTag, cx - nameTag.Length * 6, bcy - ry - 30, nameCol);
+            TxtBig(nameTag, cx - TxtBigW(nameTag)/2, bcy - ry - _fontBig.LineSpacing - 6, nameCol);
         }
 
         if (_debugOpen)
-            Txt(p.State, cx - p.State.Length * 3, bcy - ry - 46, new Color(160, 165, 200));
+            Txt(p.State, cx - TxtW(p.State)/2, bcy - ry - _fontBig.LineSpacing - _fontSmall.LineSpacing - 8, new Color(160, 165, 200));
 
         if (p.DodgeCD > 0)
         {
@@ -339,28 +345,32 @@ public partial class Game1
     { if (w > 0 && h > 0) _spriteBatch.Draw(_pixel, new Rectangle(x, y, w, h), c); }
 
     void Txt(string t, int x, int y, Color c)
-    { DrawPx(t, x+1, y+1, new Color(0,0,0,100), 1); DrawPx(t, x, y, c, 1); }
+    {
+        _spriteBatch.DrawString(_fontSmall, t, new Microsoft.Xna.Framework.Vector2(x+1, y+1), new Color(0,0,0,100));
+        _spriteBatch.DrawString(_fontSmall, t, new Microsoft.Xna.Framework.Vector2(x, y), c);
+    }
 
     void TxtMed(string t, int x, int y, Color c)
-    { DrawPx(t, x+1, y+1, new Color(0,0,0,120), 2); DrawPx(t, x, y, c, 2); }
+    {
+        _spriteBatch.DrawString(_fontMed, t, new Microsoft.Xna.Framework.Vector2(x+1, y+1), new Color(0,0,0,120));
+        _spriteBatch.DrawString(_fontMed, t, new Microsoft.Xna.Framework.Vector2(x, y), c);
+    }
 
     void TxtBig(string t, int x, int y, Color c)
-    { DrawPx(t, x+2, y+2, new Color(0,0,0,100), 2); DrawPx(t, x, y, c, 2); }
+    {
+        _spriteBatch.DrawString(_fontBig, t, new Microsoft.Xna.Framework.Vector2(x+2, y+2), new Color(0,0,0,100));
+        _spriteBatch.DrawString(_fontBig, t, new Microsoft.Xna.Framework.Vector2(x, y), c);
+    }
 
     void TxtHuge(string t, int x, int y, Color c)
-    { DrawPx(t, x+3, y+3, new Color(0,0,0,120), 3); DrawPx(t, x, y, c, 3); }
-
-    void DrawPx(string text, int x, int y, Color col, int sc)
     {
-        int cx = x;
-        foreach (char ch in text.ToUpper())
-        {
-            if (Glyphs.Map.TryGetValue(ch, out ulong bits))
-                for (int row=0; row<7; row++)
-                for (int c2=0; c2<5; c2++)
-                    if (((bits >> (34 - row*5 - c2)) & 1) == 1)
-                        R(cx + c2*sc, y + row*sc, sc, sc, col);
-            cx += 6*sc;
-        }
+        _spriteBatch.DrawString(_fontHuge, t, new Microsoft.Xna.Framework.Vector2(x+3, y+3), new Color(0,0,0,120));
+        _spriteBatch.DrawString(_fontHuge, t, new Microsoft.Xna.Framework.Vector2(x, y), c);
     }
+
+    // ── Text measure helpers ────────────────────────────────────────────────
+    int TxtW(string t)      => (int)_fontSmall.MeasureString(t).X;
+    int TxtMedW(string t)   => (int)_fontMed.MeasureString(t).X;
+    int TxtBigW(string t)   => (int)_fontBig.MeasureString(t).X;
+    int TxtHugeW(string t)  => (int)_fontHuge.MeasureString(t).X;
 }

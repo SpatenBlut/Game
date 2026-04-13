@@ -82,11 +82,12 @@ public partial class Game1
                 {
                     for (int i = 0; i < SKINS.Length; i++)
                         _ownedSkins |= (1L << i);
-                    // Unlock all 81 Case Hardened patterns
                     _ownedCHPatternsLo = unchecked((long)0xFFFFFFFFFFFFFFFFUL);
-                    _ownedCHPatternsHi = 0x1FFFF; // bits 0-16 = patterns 64-80
+                    _ownedCHPatternsHi = 0x1FFFF;
+                    for (int i = 0; i < ARM_SKINS.Length; i++)
+                        _ownedArmSkins |= (1L << i);
                     SaveGame();
-                    TermPrint($"All {SKINS.Length} skins + 81 CH patterns unlocked.", ok);
+                    TermPrint($"All {SKINS.Length} skins + 81 CH patterns + {ARM_SKINS.Length} arm skins unlocked.", ok);
                 }
                 else
                 {
@@ -100,7 +101,9 @@ public partial class Game1
                     _ownedSkins = (1L << 0) | (1L << 8);
                     _ownedCHPatternsLo = 0;
                     _ownedCHPatternsHi = 0;
+                    _ownedArmSkins = (1L << 0);
                     if (_mySkin != 0 && _mySkin != 8) _mySkin = 0;
+                    if (!ArmSkinOwned(_myArmSkin)) _myArmSkin = 0;
                     SaveGame();
                     TermPrint("All skins removed (free skins kept).", ok);
                 }
@@ -153,13 +156,14 @@ public partial class Game1
         R(0, ty, SW, TERM_H, new Color(8, 10, 16, 235));
         R(0, ty, SW, 1, new Color(60, 120, 200, 200));
 
-        R(0, ty, SW, 18, new Color(14, 18, 30, 240));
-        Txt("TERMINAL", 8, ty + 4, new Color(80, 160, 255));
+        int headerH = _fontSmall.LineSpacing + 6;
+        R(0, ty, SW, headerH, new Color(14, 18, 30, 240));
+        Txt("TERMINAL", 8, ty + 3, new Color(80, 160, 255));
         string hint = "[INSERT] schliessen";
-        Txt(hint, SW - hint.Length * 6 - 8, ty + 4, new Color(60, 80, 110));
+        Txt(hint, SW - TxtW(hint) - 8, ty + 3, new Color(60, 80, 110));
 
-        const int lineH = 12;
-        int linesAreaH = TERM_H - 18 - 20;
+        int lineH = _fontSmall.LineSpacing + 2;
+        int linesAreaH = TERM_H - headerH - 20;
         int maxVisible = linesAreaH / lineH;
         int maxScroll  = Math.Max(0, _termLines.Count - maxVisible);
         int startLine  = Math.Max(0, _termLines.Count - maxVisible - _termScrollOffset);
@@ -167,7 +171,7 @@ public partial class Game1
         if (_termLines.Count <= maxVisible) startLine = 0;
         for (int i = startLine; i < Math.Min(startLine + maxVisible, _termLines.Count); i++)
         {
-            int ly = ty + 22 + (i - startLine) * lineH;
+            int ly = ty + headerH + 2 + (i - startLine) * lineH;
             Txt(_termLines[i].text, 8, ly, _termLines[i].col);
         }
 

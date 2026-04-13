@@ -1,1 +1,5 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
+"/home/nicola/RiderProjects/App2/App2/Content/Fonts/UiBig.spritefont","/home/nicola/RiderProjects/App2/App2/Content/bin/DesktopGL/Content/Fonts/UiBig.xnb","FontDescriptionProcessor","SpriteFontContent",479,132121,0.0720511
+"/home/nicola/RiderProjects/App2/App2/Content/Fonts/UiHuge.spritefont","/home/nicola/RiderProjects/App2/App2/Content/bin/DesktopGL/Content/Fonts/UiHuge.xnb","FontDescriptionProcessor","SpriteFontContent",479,431129,0.070738
+"/home/nicola/RiderProjects/App2/App2/Content/Fonts/UiMed.spritefont","/home/nicola/RiderProjects/App2/App2/Content/bin/DesktopGL/Content/Fonts/UiMed.xnb","FontDescriptionProcessor","SpriteFontContent",479,68633,0.0578166
+"/home/nicola/RiderProjects/App2/App2/Content/Fonts/UiSmall.spritefont","/home/nicola/RiderProjects/App2/App2/Content/bin/DesktopGL/Content/Fonts/UiSmall.xnb","FontDescriptionProcessor","SpriteFontContent",479,46105,0.4725967

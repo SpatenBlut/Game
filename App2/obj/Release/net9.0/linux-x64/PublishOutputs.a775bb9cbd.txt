@@ -1,4 +1,8 @@
 /home/nicola/RiderProjects/App2/publish/App2
+/home/nicola/RiderProjects/App2/publish/Content/Fonts/UiBig.xnb
+/home/nicola/RiderProjects/App2/publish/Content/Fonts/UiHuge.xnb
+/home/nicola/RiderProjects/App2/publish/Content/Fonts/UiMed.xnb
+/home/nicola/RiderProjects/App2/publish/Content/Fonts/UiSmall.xnb
 /home/nicola/RiderProjects/App2/publish/App2.dll
 /home/nicola/RiderProjects/App2/publish/App2.deps.json
 /home/nicola/RiderProjects/App2/publish/App2.runtimeconfig.json

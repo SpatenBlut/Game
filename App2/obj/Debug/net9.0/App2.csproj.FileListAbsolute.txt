@@ -32,3 +32,7 @@
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/App2.genruntimeconfig.cache
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/ref/App2.dll
 /home/nicola/RiderProjects/App2/App2/obj/Debug/net9.0/App2.sourcelink.json
+/home/nicola/RiderProjects/App2/App2/bin/Debug/net9.0/Content/Fonts/UiBig.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Debug/net9.0/Content/Fonts/UiHuge.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Debug/net9.0/Content/Fonts/UiMed.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Debug/net9.0/Content/Fonts/UiSmall.xnb

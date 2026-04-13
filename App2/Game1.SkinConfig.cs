@@ -9,7 +9,7 @@ public partial class Game1
         int cx = SW / 2;
 
         string title = "CONFIG";
-        TxtBig(title, cx - title.Length * 6, 30, new Color(100, 140, 255));
+        TxtBig(title, cx - TxtBigW(title)/2, 30, new Color(100, 140, 255));
 
         string[] tabLabels = { "SKIN", "ARMS" };
         const int tabW = 150, tabH = 32, tabGap = 8;
@@ -34,7 +34,7 @@ public partial class Game1
             R(tx, tabY, 2, tabH, tedge);
             R(tx + tabW - 2, tabY, 2, tabH, tedge);
             Color tc = sel ? Color.White : new Color(140, 150, 200);
-            TxtMed(tabLabels[t], tx + tabW / 2 - tabLabels[t].Length * 6, tabY + tabH / 2 - 7, tc);
+            TxtMed(tabLabels[t], tx + tabW/2 - TxtMedW(tabLabels[t])/2, tabY + tabH/2 - _fontMed.LineSpacing/2, tc);
         }
 
         int contentY = tabY + tabH + 10;
@@ -51,9 +51,14 @@ public partial class Game1
                 int ty = contentY + i * (tileH + gapY);
                 if (ty + tileH < contentY || ty > SH - 50) continue;
 
-                bool selected = i == _myArmSkin;
-                Color bg   = selected ? new Color(50, 70, 130) : new Color(38, 42, 72);
-                Color edge = selected ? new Color(110, 150, 255) : new Color(50, 60, 100);
+                bool owned    = ArmSkinOwned(i);
+                bool selected = owned && i == _myArmSkin;
+                Color bg   = !owned   ? new Color(22, 24, 40)
+                           : selected ? new Color(50, 70, 130)
+                                      : new Color(38, 42, 72);
+                Color edge = !owned   ? new Color(35, 40, 65)
+                           : selected ? new Color(110, 150, 255)
+                                      : new Color(50, 60, 100);
 
                 R(startX + 3, ty + 3, tileW, tileH, new Color(0, 0, 0, 60));
                 R(startX, ty, tileW, tileH, bg);
@@ -62,11 +67,24 @@ public partial class Game1
                 R(startX, ty, 2, tileH, edge);
                 R(startX + tileW - 2, ty, 2, tileH, edge);
 
-                DrawEllipse(startX + 28, ty + tileH / 2, 16, 16, ARM_SKINS[i].Col);
-                TxtMed(ARM_SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, ARM_SKINS[i].Col);
-
-                if (selected)
-                    DrawEllipse(startX + tileW - 14, ty + tileH / 2, 5, 5, new Color(100, 160, 255));
+                if (owned)
+                {
+                    DrawEllipse(startX + 28, ty + tileH / 2, 16, 16, ARM_SKINS[i].Col);
+                    TxtMed(ARM_SKINS[i].Name, startX + 52, ty + tileH/2 - _fontMed.LineSpacing/2, ARM_SKINS[i].Col);
+                    if (selected)
+                        DrawEllipse(startX + tileW - 14, ty + tileH / 2, 5, 5, new Color(100, 160, 255));
+                }
+                else
+                {
+                    int lx = startX + 20, ly = ty + tileH / 2 - 8;
+                    R(lx + 3, ly,     10, 6, new Color(80, 85, 120));
+                    R(lx + 3, ly + 3, 10, 3, bg);
+                    R(lx,     ly + 6, 16, 11, new Color(80, 85, 120));
+                    R(lx + 6, ly + 9,  4,  4, new Color(30, 33, 52));
+                    int lockedMidY = ty + tileH/2 - _fontMed.LineSpacing/2;
+                    TxtMed(ARM_SKINS[i].Name, startX + 52, lockedMidY, new Color(55, 60, 90));
+                    TxtMed("LOCKED", startX + tileW - TxtMedW("LOCKED") - 14, lockedMidY, new Color(60, 65, 100));
+                }
             }
         }
 
@@ -87,11 +105,12 @@ public partial class Game1
             R(startX, togY + togH - 2, togW, 2, togEdge);
             R(startX, togY, 2, togH, togEdge);
             R(startX + togW - 2, togY, 2, togH, togEdge);
-            TxtMed("EYES", startX + 14, togY + togH / 2 - 7, new Color(160, 170, 220));
+            int togMidY = togY + togH/2 - _fontMed.LineSpacing/2;
+            TxtMed("EYES", startX + 14, togMidY, new Color(160, 170, 220));
             Color onCol  = _showEyes ? new Color(80, 220, 100) : new Color(55, 60, 90);
             Color offCol = _showEyes ? new Color(55, 60, 90)   : new Color(220, 80, 80);
-            TxtMed("ON",  startX + togW - 80, togY + togH / 2 - 7, onCol);
-            TxtMed("OFF", startX + togW - 44, togY + togH / 2 - 7, offCol);
+            TxtMed("ON",  startX + togW - TxtMedW("ON")  - 56, togMidY, onCol);
+            TxtMed("OFF", startX + togW - TxtMedW("OFF") - 20, togMidY, offCol);
             contentY += togH + gapY;
 
             int idx = 0;
@@ -131,9 +150,10 @@ public partial class Game1
                 {
                     Color sc = SkinColor(i, _menuTime);
                     DrawSkinEllipse(startX + 28, ty + tileH / 2, 16, 16, i, _menuTime);
-                    TxtMed(SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, sc);
+                    int skinMidY = ty + tileH/2 - _fontMed.LineSpacing/2;
+                    TxtMed(SKINS[i].Name, startX + 52, skinMidY, sc);
                     if (rare && i != SKIN_CASEHARDENED)
-                        TxtMed("★", startX + tileW - 32, ty + tileH / 2 - 7, new Color(255, 200, 50));
+                        TxtMed("*", startX + tileW - TxtMedW("*") - 14, skinMidY, new Color(255, 200, 50));
                     if (selected)
                         DrawEllipse(startX + tileW - 14, ty + tileH / 2, 5, 5, new Color(100, 160, 255));
                 }
@@ -144,8 +164,9 @@ public partial class Game1
                     R(lx + 3, ly + 3, 10, 3, bg);
                     R(lx,     ly + 6, 16, 11, new Color(80, 85, 120));
                     R(lx + 6, ly + 9,  4,  4, new Color(30, 33, 52));
-                    TxtMed(SKINS[i].Name, startX + 52, ty + tileH / 2 - 7, new Color(55, 60, 90));
-                    TxtMed("LOCKED", startX + tileW - 70, ty + tileH / 2 - 7, new Color(60, 65, 100));
+                    int lockedMidY = ty + tileH/2 - _fontMed.LineSpacing/2;
+                    TxtMed(SKINS[i].Name, startX + 52, lockedMidY, new Color(55, 60, 90));
+                    TxtMed("LOCKED", startX + tileW - TxtMedW("LOCKED") - 14, lockedMidY, new Color(60, 65, 100));
                 }
             }
 
@@ -160,7 +181,7 @@ public partial class Game1
             }
         }
 
-        TxtMed("[ESC] BACK", cx - 60, SH - 36, new Color(100, 110, 160));
+        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, SH - _fontMed.LineSpacing - 10, new Color(100, 110, 160));
 
         // ── Pattern Picker overlay ────────────────────────────────────────────
         if (_showCHPicker)
@@ -177,7 +198,7 @@ public partial class Game1
             R(gridX - 16, gridY - 40, gridW + 32, 2, new Color(100, 140, 255));
 
             string ptitle = "PATTERN";
-            TxtBig(ptitle, cx - ptitle.Length * 6, gridY - 32, new Color(100, 140, 255));
+            TxtBig(ptitle, cx - TxtBigW(ptitle)/2, gridY - _fontBig.LineSpacing - 6, new Color(100, 140, 255));
 
             for (int row = 0; row < rows; row++)
             {
@@ -219,7 +240,7 @@ public partial class Game1
                     }
                 }
             }
-            TxtMed("[ESC] CLOSE", cx - 66, gridY + gridH + 10, new Color(100, 110, 160));
+            TxtMed("[ESC] CLOSE", cx - TxtMedW("[ESC] CLOSE")/2, gridY + gridH + 10, new Color(100, 110, 160));
         }
     }
 
@@ -278,7 +299,11 @@ public partial class Game1
             for (int i = 0; i < ARM_SKINS.Length; i++)
             {
                 int ty = armContentY + i * (tileH2 + gapY2);
-                if (Clicked(click, startX2, ty, tileW2, tileH2)) { _myArmSkin = i; SaveGame(); return; }
+                if (Clicked(click, startX2, ty, tileW2, tileH2))
+                {
+                    if (ArmSkinOwned(i)) { _myArmSkin = i; SaveGame(); }
+                    return;
+                }
             }
             return;
         }

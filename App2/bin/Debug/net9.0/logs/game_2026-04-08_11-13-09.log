@@ -1,0 +1,20 @@
+[11:13:09.874] === BRAWLHAVEN LOG ===
+[11:13:09.891] Zeit:       08.04.2026 11:13:09
+[11:13:09.891] OS:         Linux Mint 22.1
+[11:13:09.897] Arch:       X64
+[11:13:09.897] Runtime:    .NET 9.0.14
+[11:13:09.897] Log-Datei:  /home/nicola/RiderProjects/App2/App2/bin/Debug/net9.0/logs/game_2026-04-08_11-13-09.log
+[11:13:09.897] =====================
+[11:13:10.128] Viewport: 1920x1080
+[11:13:10.128] Adapter:  Mesa Intel(R) HD Graphics 520 (SKL GT2)
+[11:13:10.134] Initialize abgeschlossen – Zustand: Menu
+[11:13:13.196] EXCEPTION in Draw: ArgumentException: Text contains characters that cannot be resolved by this SpriteFont. (Parameter 'text')
+[11:13:13.246]   StackTrace:    at Microsoft.Xna.Framework.Graphics.SpriteFont.GetGlyphIndexOrDefault(Char c)
+                at Microsoft.Xna.Framework.Graphics.SpriteBatch.DrawString(SpriteFont spriteFont, String text, Vector2 position, Color color)
+                at Game1.DrawStr(SpriteFont f, String t, Int32 x, Int32 y, Color c) in /home/nicola/RiderProjects/App2/App2/Game1.Rendering.cs:line 345
+                at Game1.TxtMed(String t, Int32 x, Int32 y, Color c) in /home/nicola/RiderProjects/App2/App2/Game1.Rendering.cs:line 350
+                at Game1.DrawSkinConfig() in /home/nicola/RiderProjects/App2/App2/Game1.SkinConfig.cs:line 153
+                at Game1.DrawInner(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 243
+                at Game1.Draw(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 221
+[11:13:13.247] GameState=SkinConfig configTab=0 configScrollY=40 showCHPicker=False
+[11:13:13.248] === Spiel beendet ===

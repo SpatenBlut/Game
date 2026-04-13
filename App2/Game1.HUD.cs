@@ -15,10 +15,11 @@ public partial class Game1
         Color timeCol = _roundTime > 30f ? new Color(200, 205, 240)
                       : _roundTime > 10f ? new Color(255, 200, 50)
                                          : new Color(255, 70, 70);
-        int tpW = 90, tpH = 28;
+        int tpW = TxtBigW(timeStr) + 24;
+        int tpH = _fontBig.LineSpacing + 10;
         R(cx - tpW/2 - 4, hudY - 4, tpW + 8, tpH + 8, new Color(0, 0, 0, 140));
         R(cx - tpW/2 - 2, hudY - 2, tpW + 4, tpH + 4, new Color(35, 40, 68));
-        TxtBig(timeStr, cx - timeStr.Length * 6, hudY + 4, timeCol);
+        TxtBig(timeStr, cx - TxtBigW(timeStr)/2, hudY + 5, timeCol);
 
         // ── Score dots ────────────────────────────────────────────────────
         DrawScoreBlock(cx - 59 - 130, hudY, _scoreP1,    _p1.Color, "P1", true);
@@ -29,15 +30,17 @@ public partial class Game1
         DrawDamagePanel(GameStartX + GameW - 10,  10, _p2, false);
 
         if (_lastKillText != "")
-            Txt(_lastKillText, cx - _lastKillText.Length * 3, hudY + 48, new Color(255, 190, 80));
+            Txt(_lastKillText, cx - TxtW(_lastKillText)/2, hudY + tpH + 14, new Color(255, 190, 80));
     }
 
     void DrawDamagePanel(int edgeX, int y, Player p, bool leftSide)
     {
         string pctStr = $"{(int)p.Damage}%";
-        int    panW   = Math.Max(80, pctStr.Length * 12 + 20);
-        int    panH   = 36;
-        int    panX   = leftSide ? edgeX : edgeX - panW;
+        int    panH   = 48;
+
+        var  measured = _fontBig.MeasureString(pctStr);
+        int  panW     = Math.Max(90, (int)measured.X + 24);
+        int  panX     = leftSide ? edgeX : edgeX - panW;
 
         R(panX - 2, y - 2, panW + 4, panH + 4, new Color(0, 0, 0, 150));
         R(panX,     y,     panW,     panH,     new Color(30, 35, 58));
@@ -46,8 +49,16 @@ public partial class Game1
         Color dc = p.Damage < 50  ? new Color(100, 230, 100)
                  : p.Damage < 100 ? new Color(255, 210, 60)
                                   : new Color(255, 80,  80);
-        int txtX = leftSide ? panX + 8 : panX + panW - pctStr.Length * 12 - 8;
-        TxtBig(pctStr, txtX, y + 6, dc);
+
+        // zentriert in der Box
+        float txtX = panX + (panW - measured.X) / 2f;
+        float txtY = y    + (panH - measured.Y) / 2f;
+        // Schatten
+        _spriteBatch.DrawString(_fontBig, pctStr,
+            new Microsoft.Xna.Framework.Vector2(txtX + 2, txtY + 2),
+            new Color(0, 0, 0, 120));
+        _spriteBatch.DrawString(_fontBig, pctStr,
+            new Microsoft.Xna.Framework.Vector2(txtX, txtY), dc);
     }
 
     void DrawScoreBlock(int x, int y, int score, Color col, string label, bool leftAlign)
@@ -56,7 +67,8 @@ public partial class Game1
         R(x - 2, y - 2, pw + 4, ph + 4, new Color(0, 0, 0, 140));
         R(x,     y,     pw,     ph,     new Color(22, 26, 45));
 
-        Txt(label, leftAlign ? x + 6 : x + pw - 20, y + 4, col);
+        int lblY = y + (ph - _fontSmall.LineSpacing) / 2;
+        Txt(label, leftAlign ? x + 6 : x + pw - TxtW(label) - 6, lblY, col);
 
         int dotR = 7, gap = 20;
         int dotStartX = x + pw / 2 - (SCORE_TO_WIN - 1) * gap / 2;
@@ -76,7 +88,7 @@ public partial class Game1
     {
         R(0, 0, SW, SH, new Color(0, 0, 0, 110));
         int cx = GameStartX + GameW / 2;
-        TxtBig("ROUND OVER", cx - 90, SH/2 - 22, new Color(200, 205, 255));
+        TxtBig("ROUND OVER", cx - TxtBigW("ROUND OVER")/2, SH/2 - _fontBig.LineSpacing/2, new Color(200, 205, 255));
     }
 
     void DrawGameOver()
@@ -85,14 +97,15 @@ public partial class Game1
         int cx = GameStartX + GameW / 2;
         if (_roundWinner == 0)
         {
-            TxtBig("UNENTSCHIEDEN", cx - 104, SH/2 - 36, new Color(200, 200, 100));
+            TxtBig("UNENTSCHIEDEN", cx - TxtBigW("UNENTSCHIEDEN")/2, SH/2 - _fontBig.LineSpacing - 4, new Color(200, 200, 100));
         }
         else
         {
             Color wc = _roundWinner == 1 ? _p1.Color : _p2.Color;
-            TxtBig($"PLAYER {_roundWinner} WINS!", cx - 110, SH/2 - 36, wc);
+            string winStr = $"PLAYER {_roundWinner} WINS!";
+            TxtBig(winStr, cx - TxtBigW(winStr)/2, SH/2 - _fontBig.LineSpacing - 4, wc);
         }
-        Txt("[R] MENU", cx - 36, SH/2 + 18, new Color(180, 185, 210));
+        Txt("[R] MENU", cx - TxtW("[R] MENU")/2, SH/2 + 14, new Color(180, 185, 210));
     }
 
     void DrawDebug()
@@ -100,7 +113,7 @@ public partial class Game1
         R(0, 0, DEBUG_W, SH, new Color(11, 13, 22, 245));
         R(DEBUG_W - 2, 0, 2, SH, new Color(45, 50, 75));
 
-        int y = 8, x = 8, lh = 17;
+        int y = 8, x = 8, lh = _fontSmall.LineSpacing + 2;
         void Lbl(string t, Color c) { Txt(t, x, y, c); y += lh; }
         void Sep() { R(x, y + 3, DEBUG_W - 16, 1, new Color(38, 43, 65)); y += lh; }
         void Row(string k, string v, Color vc) {

@@ -52,11 +52,12 @@ public partial class Game1 : Game
             int scrollDelta = mouse.ScrollWheelValue - _prevMouse.ScrollWheelValue;
             if (scrollDelta != 0)
             {
-                const int lineH = 12;
-                int linesAreaH  = TERM_H - 18 - 20;
-                int maxVisible  = linesAreaH / lineH;
-                int maxScroll   = Math.Max(0, _termLines.Count - maxVisible);
-                _termScrollOffset = Math.Clamp(_termScrollOffset - scrollDelta / 120, 0, maxScroll);
+                int lineH      = _fontSmall.LineSpacing + 2;
+                int headerH    = _fontSmall.LineSpacing + 6;
+                int linesAreaH = TERM_H - headerH - 20;
+                int maxVisible = linesAreaH / lineH;
+                int maxScroll  = Math.Max(0, _termLines.Count - maxVisible);
+                _termScrollOffset = Math.Clamp(_termScrollOffset + Math.Sign(scrollDelta), 0, maxScroll);
             }
         }
 
@@ -77,7 +78,14 @@ public partial class Game1 : Game
                 _chestAnimTimer += dt;
                 if (_chestAnimTimer >= CHEST_ANIM_DUR)
                 {
-                    if (_chestResult != _chestAnimPick) AwardChestResult();
+                    if (_chestIsArm)
+                    {
+                        if (_armChestResult != _chestAnimPick) AwardArmChestResult();
+                    }
+                    else
+                    {
+                        if (_chestResult != _chestAnimPick) AwardChestResult();
+                    }
                     if (mouseClick) _chestAnimating = false;
                 }
             }

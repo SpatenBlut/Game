@@ -40,6 +40,8 @@ public partial class Game1
         if (changed) SaveGame();
     }
 
+    bool ArmSkinOwned(int i) => i == 0 || (_ownedArmSkins & (1L << i)) != 0;
+
     // Case Hardened is "owned" when at least one pattern is unlocked
     bool SkinOwned(int skin)
     {

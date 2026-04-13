@@ -204,3 +204,7 @@
 /home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/libhostpolicy.so
 /home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/libmscordaccore.so
 /home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/libmscordbi.so
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/Content/Fonts/UiBig.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/Content/Fonts/UiHuge.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/Content/Fonts/UiMed.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/linux-x64/Content/Fonts/UiSmall.xnb

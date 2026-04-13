@@ -40,6 +40,10 @@ public partial class Game1
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
+        _fontSmall = Content.Load<SpriteFont>("Fonts/UiSmall");
+        _fontMed   = Content.Load<SpriteFont>("Fonts/UiMed");
+        _fontBig   = Content.Load<SpriteFont>("Fonts/UiBig");
+        _fontHuge  = Content.Load<SpriteFont>("Fonts/UiHuge");
 
         var asm = System.Reflection.Assembly.GetExecutingAssembly();
         using var stream = asm.GetManifestResourceStream("damascus.png");

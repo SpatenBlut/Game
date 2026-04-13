@@ -1,23 +1,108 @@
-Produktionstitel: Projekt Brawlhaven
+# BRAWLHAVEN
 
-Brawlhaven ist ein lokales Zwei Spieler Plattform Kampfspiel, das stark von Super Smash Bros inspiriert wurde. Das Spiel findet auf einer einzelnen Arena statt, welche aus mehreren Plattformen auf verschiedenen Höhen besteht. Beide Spieler kämpfen gleichzeitig gegeneinander und versuchen, den anderen aus der Arena zu schleudern. Es ist kein Shooter, kein Jump n Run und auch kein Denkspiel, sondern ein direktes Kampfspiel, bei dem Geschick, Timing und Reaktionsvermögen entscheidend sind. Was das Spiel einzigartig macht, ist die Kombination aus einem einfachen Steuerungskonzept und einem tiefen Mechanikensystem, das schnell gelernt aber schwer gemeistert werden kann.
+Ein lokales 2-Spieler Plattform-Kampfspiel inspiriert von Super Smash Bros — gebaut mit MonoGame und C#.
 
-Das Besondere an Brawlhaven ist das Schadensystem. Anders als bei klassischen Kampfspielen, bei denen eine Lebensleiste geleert wird, sammeln die Spieler in Brawlhaven Schadensprozente. Je mehr Schaden ein Spieler angehäuft hat, desto weiter wird er beim nächsten Treffer weggeschleudert. Dadurch wird das Spiel sehr dynamisch, weil ein stark angeschlagener Spieler mit einem einzigen gut platzierten Schlag sofort aus der Arena geflogen werden kann. Gewonnen wird, indem man den Gegner über die Grenzen der Arena wirft, sei es nach oben, zur Seite oder nach unten. Verloren hat man, wenn man selbst zu oft aus der Arena fliegt und der Gegner mehr Punkte sammelt.
+---
 
-Der Ablauf des Spieles ist folgendermassen aufgebaut: Eine Runde dauert zwei Minuten. In dieser Zeit versuchen beide Spieler möglichst viele Punkte zu sammeln, indem sie den Gegner aus der Arena werfen. Wer zuerst drei Runden gewinnt, gewinnt das gesamte Match. Läuft die Zeit ab und beide Spieler haben gleich viele Punkte, endet die Runde unentschieden. Die Steuerung ist bewusst einfach gehalten: Bewegung per Tastatur, Doppelsprung, ein schwerer Angriff per Maustaste sowie ein Ausweichmanöver zum Entkommen.
+## Über das Spiel
 
-Die Zielgruppe von Brawlhaven sind Jugendliche und junge Erwachsene zwischen 14 und 25 Jahren. Das Spiel richtet sich an Personen die gerne zusammen mit Freunden spielen, da es ausschliesslich lokal als Zwei Spieler Erlebnis funktioniert. Die Mechaniken sind einfach genug um schnell einzusteigen, bieten aber genug Tiefe um das Spiel langfristig interessant zu halten. Diese Zielgruppe ist ideal, weil genau diese Altersgruppe mit Spielen wie Super Smash Bros aufgewachsen ist und das Spielkonzept sofort versteht.
+BRAWLHAVEN ist ein 2D-Plattform-Kampfspiel, bei dem zwei Spieler gleichzeitig auf einer mehrstöckigen Arena kämpfen. Statt einer klassischen Lebensleiste sammeln Spieler **Schadensprozente** — je höher der Schaden, desto weiter wird man beim nächsten Treffer aus der Arena geschleudert. Wer zuerst 3 Runden gewinnt, gewinnt das Match.
 
-Fünf ähnliche Spiele und der Vergleich zu Brawlhaven:
+---
 
-Super Smash Bros Ultimate ist das bekannteste Plattform Kampfspiel der Welt. Brawlhaven ist schlanker und ohne aufwändige Assets spielbar, was es deutlich zugänglicher und einfacher umsetzbar macht.
+## Features
 
-Brawlhalla ist ein kostenloses Plattform Kampfspiel mit sehr vielen Charakteren und Waffen. Brawlhaven verzichtet bewusst auf Waffen und fokussiert sich auf reines, faires Kampfgefühl ohne zusätzliche Zufallselemente.
+- **Prozentuales Schadensystem** — Knockback skaliert mit angesammeltem Schaden (`kbBase * (1 + damage/55)`)
+- **Best of 3** — Runden à 2 Minuten, Punkte durch Arenen-Abwürfe
+- **Plattformphysik** — Doppelsprung, Wandsprung, Coyote-Zeit, Sprungpufferung
+- **20 Skins & 15 Arm-Skins** — Common, Rare (animiert) und Legendary (texturbasiert)
+- **CS2-Style Shop** — Mystery Chest mit Scroll-Animation, gewichteten Seltenheiten und Duplikat-Erkennung
+- **64 Challenges** — Win-/Hit-/Schaden-/Streak-/Perfect-Milestones mit Coin-Belohnungen
+- **Bot-KI** — Absichtlich imperfekt: 80% Angriffsgenauigkeit, Dodge-Wahrscheinlichkeit, Kantenvermeidung
+- **LAN-Multiplayer** — Custom UDP mit 4-stelligem Code zur Erkennung im lokalen Netzwerk
+- **Debug-Terminal** — Mit INSERT öffnen, versteckte Befehle mit `unlock --commands`
 
-Rivals of Aether setzt auf einzigartige Charaktere mit speziellen Fähigkeiten. Brawlhaven hingegen bietet beiden Spielern exakt dieselben Möglichkeiten, was mehr Fairness schafft und den Fokus auf das Können legt.
+---
 
-Mortal Kombat ist ein klassisches Kampfspiel ohne Plattformmechaniken und mit einer klassischen Lebensleiste. Brawlhaven hebt sich durch seine offene Arena und das Prozenzsystem klar davon ab.
+## Steuerung
 
-Street Fighter ist ebenfalls ein klassisches Kampfspiel auf fixer Plattform. Brawlhaven macht das Spielgefühl durch die freie Bewegung in der Arena und das Knockbacksystem deutlich dynamischer und unberechenbarer.
+| Aktion | Spieler 1 |
+|---|---|
+| Bewegen | `A` / `D` |
+| Springen / Doppelsprung | `W` |
+| Schwerer Angriff | Linke Maustaste (Ziel: Mauszeiger) |
+| Ausweichen | `S` + Linke Maustaste |
+| Debug-Overlay | `F1` |
+| Terminal | `INSERT` |
+| Beenden | `ESC` |
 
-Die geschätzte Entwicklungszeit beträgt ungefähr drei Wochen. Die erste Woche liegt bereits hinter uns, in dieser wurden die grundlegenden Mechaniken wie Bewegung, Sprung und Angriff implementiert. In der zweiten Woche folgen Kollisionserkennung, das Schadensystem und die Plattformen. Die dritte und letzte Woche wird für Feinschliff, Bugfixes und das Ausbalancieren der Spielmechaniken genutzt, damit das Spiel am Ende fair und spassig ist.
+---
+
+## Installation & Starten
+
+**Voraussetzungen:** .NET 9 SDK, MonoGame 3.8
+
+```bash
+# Bauen
+~/.dotnet/dotnet build
+
+# Bauen & starten
+~/.dotnet/dotnet run --project App2
+
+# Vorkompiliertes Binary starten (Linux)
+./start.sh
+```
+
+Das Spiel startet im Vollbild ohne festen Timestep (ungedeckelte FPS, VSync deaktiviert).
+
+Speicherdatei: `~/.local/share/BRAWLHAVEN/save.dat`
+
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| Framework | MonoGame 3.8 (DesktopGL / OpenGL via SDL2) |
+| Sprache | C# (.NET 9) |
+| Rendering | 1×1 Pixel-Textur + SpriteBatch-Tinting; custom 5×7 Pixel-Font |
+| Netzwerk | Raw `UdpClient` (kein externes Netzwerk-Framework) |
+| Build | MonoGame Content Pipeline (MGCB), nur 4 SpriteFont-Dateien |
+| Plattform | Linux (primär), Windows (`win-x64` Publish) |
+
+---
+
+## Projektstruktur
+
+```
+App2/
+├── Game1.cs                  # Haupt-Game-Loop (Update/Draw)
+├── Game1.Fields.cs           # Alle Felder, Konstanten, Skin-/Challenge-Arrays
+├── Game1.Init.cs             # Konstruktor, LoadContent, Textur-Baking
+├── Game1.Gameplay.cs         # Map, Runden-Reset, Kamera, Partikel
+├── Game1.Rendering.cs        # Primitive Drawing (R(), DrawEllipse, Plattformen, Spieler)
+├── Game1.HUD.cs              # Timer, Schaden-Panels, Score-Dots, Overlays
+├── Game1.Screens.cs          # Menü, PlayMenu, NameEntry, Lobby
+├── Game1.Shop.cs             # Chest-Opening-Animation, Gewichtungspool
+├── Game1.Challenges.cs       # Challenge-Tracking-Logik
+├── Game1.ChallengesUI.cs     # Challenges-Screen-Rendering
+├── Game1.SkinConfig.cs       # Skin-/Arm-Auswahl, Case-Hardened-Pattern-Picker
+├── Game1.Terminal.cs         # Debug-Terminal mit Befehlen
+├── Game1.SaveLoad.cs         # Binäres Speicherformat v9
+├── Game1.Helpers.cs          # W2S(), KeyJustPressed(), SkinColor(), HsvToRgb()
+├── Core/
+│   ├── GameState.cs          # State-Enum (Menu, Playing, Shop, ...)
+│   ├── PlayerInput.cs        # 2-Byte gepacktes Input-Struct (netzwerkfreundlich)
+│   ├── RectF.cs              # Float-AABB mit Intersects()
+│   └── Logger.cs             # Session-Datei-Logger
+├── Entities/
+│   ├── Player.cs             # Physik, Input, Hitbox (OBB/SAT), State Machine
+│   └── BotController.cs      # CPU-KI
+├── Net/
+│   └── GameNet.cs            # UDP LAN-Multiplayer (Host/Client, Input-Sync)
+├── Rendering/
+│   └── Glyphs.cs             # 5×7 Bitmask-Pixel-Font
+└── World/
+    ├── Platform.cs           # Platform-Struct + PlatType-Enum
+    └── Particle.cs           # Partikel mit Velocity/Lifetime
+```
