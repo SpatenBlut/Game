@@ -204,3 +204,7 @@
 /home/nicola/RiderProjects/App2/App2/obj/Release/net9.0/win-x64/App2.pdb
 /home/nicola/RiderProjects/App2/App2/obj/Release/net9.0/win-x64/App2.genruntimeconfig.cache
 /home/nicola/RiderProjects/App2/App2/obj/Release/net9.0/win-x64/ref/App2.dll
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/win-x64/Content/Fonts/UiBig.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/win-x64/Content/Fonts/UiHuge.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/win-x64/Content/Fonts/UiMed.xnb
+/home/nicola/RiderProjects/App2/App2/bin/Release/net9.0/win-x64/Content/Fonts/UiSmall.xnb

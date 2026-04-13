@@ -1,0 +1,8 @@
+/home/nicola/RiderProjects/App2/publish/windows/App2.pdb
+/home/nicola/RiderProjects/App2/publish/windows/Content/Fonts/UiBig.xnb
+/home/nicola/RiderProjects/App2/publish/windows/Content/Fonts/UiHuge.xnb
+/home/nicola/RiderProjects/App2/publish/windows/Content/Fonts/UiMed.xnb
+/home/nicola/RiderProjects/App2/publish/windows/Content/Fonts/UiSmall.xnb
+/home/nicola/RiderProjects/App2/publish/windows/openal.dll
+/home/nicola/RiderProjects/App2/publish/windows/SDL2.dll
+/home/nicola/RiderProjects/App2/publish/windows/App2.exe

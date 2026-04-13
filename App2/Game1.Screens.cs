@@ -35,38 +35,39 @@ public partial class Game1
     void DrawMenu()
     {
         DrawMenuBg();
-        int cx = SW / 2, cy = SH / 2;
-        string title = "BRAWLHAVEN";
-        TxtHuge(title, cx - TxtHugeW(title)/2, cy - 210, new Color(100, 140, 255));
+        int cx = SW / 2;
 
-        string[] labels = { "PLAY", "SHOP", "CHALLENGES", "CONFIG" };
-        int totalH = labels.Length * (MENU_BH + MENU_GAP) - MENU_GAP;
-        int startY = cy - totalH / 2 + 10;
-        for (int i = 0; i < labels.Length; i++)
-            DrawButton(cx - MENU_BW / 2, startY + i * (MENU_BH + MENU_GAP), MENU_BW, MENU_BH, labels[i]);
-
+        // Coins oben rechts
         string coinsStr = $"COINS: {_coins}";
-        TxtMed(coinsStr, cx - TxtMedW(coinsStr)/2, startY + labels.Length * (MENU_BH + MENU_GAP) + 16, new Color(255, 200, 50));
+        TxtMed(coinsStr, SW - TxtMedW(coinsStr) - 20, 20, new Color(255, 200, 50));
 
-        string fps = $"FPS {(int)_fps}";
-        Txt(fps, SW - TxtW(fps) - 10, 10, new Color(60, 70, 100));
+        // Tabs horizontal oben
+        string[] labels = { "PLAY", "CONFIG", "SHOP", "CHALLENGES" };
+        const int TAB_W = 220, TAB_GAP = 20;
+        int totalW = labels.Length * TAB_W + (labels.Length - 1) * TAB_GAP;
+        int startX = cx - totalW / 2;
+        int tabY = 60;
+        for (int i = 0; i < labels.Length; i++)
+            DrawButton(startX + i * (TAB_W + TAB_GAP), tabY, TAB_W, MENU_BH, labels[i]);
     }
 
     void HandleMenuClick(bool click)
     {
         if (!click) return;
-        int cx = SW / 2, cy = SH / 2;
-        string[] labels = { "PLAY", "SHOP", "CHALLENGES", "CONFIG" };
-        int totalH = labels.Length * (MENU_BH + MENU_GAP) - MENU_GAP;
-        int startY = cy - totalH / 2 + 10;
+        int cx = SW / 2;
+        string[] labels = { "PLAY", "CONFIG", "SHOP", "CHALLENGES" };
+        const int TAB_W = 220, TAB_GAP = 20;
+        int totalW = labels.Length * TAB_W + (labels.Length - 1) * TAB_GAP;
+        int startX = cx - totalW / 2;
+        int tabY = 60;
         for (int i = 0; i < labels.Length; i++)
         {
-            int bx = cx - MENU_BW / 2, by = startY + i * (MENU_BH + MENU_GAP);
-            if (!Clicked(click, bx, by, MENU_BW, MENU_BH)) continue;
+            int bx = startX + i * (TAB_W + TAB_GAP);
+            if (!Clicked(click, bx, tabY, TAB_W, MENU_BH)) continue;
             if      (i == 0) _state = GameState.PlayMenu;
-            else if (i == 1) _state = GameState.Shop;
-            else if (i == 2) _state = GameState.Challenges;
-            else             { _state = GameState.SkinConfig; _configScrollY = 0; }
+            else if (i == 1) { _state = GameState.SkinConfig; _configScrollY = 0; }
+            else if (i == 2) _state = GameState.Shop;
+            else             _state = GameState.Challenges;
             break;
         }
     }
