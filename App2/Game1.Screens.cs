@@ -32,49 +32,64 @@ public partial class Game1
         click && _mousePos.X >= bx && _mousePos.X <= bx + bw &&
                  _mousePos.Y >= by && _mousePos.Y <= by + bh;
 
-    void DrawMenu()
+    void DrawMenuTabs(int activeTab)
     {
-        DrawMenuBg();
-        int cx = SW / 2;
-
-        // Coins oben rechts
         string coinsStr = $"COINS: {_coins}";
         TxtMed(coinsStr, SW - TxtMedW(coinsStr) - 20, 20, new Color(255, 200, 50));
 
-        // Tabs horizontal oben
         string[] labels = { "PLAY", "CONFIG", "SHOP", "CHALLENGES" };
         const int TAB_W = 220, TAB_GAP = 20;
         int totalW = labels.Length * TAB_W + (labels.Length - 1) * TAB_GAP;
-        int startX = cx - totalW / 2;
-        int tabY = 60;
-        for (int i = 0; i < labels.Length; i++)
-            DrawButton(startX + i * (TAB_W + TAB_GAP), tabY, TAB_W, MENU_BH, labels[i]);
-    }
-
-    void HandleMenuClick(bool click)
-    {
-        if (!click) return;
-        int cx = SW / 2;
-        string[] labels = { "PLAY", "CONFIG", "SHOP", "CHALLENGES" };
-        const int TAB_W = 220, TAB_GAP = 20;
-        int totalW = labels.Length * TAB_W + (labels.Length - 1) * TAB_GAP;
-        int startX = cx - totalW / 2;
+        int startX = SW / 2 - totalW / 2;
         int tabY = 60;
         for (int i = 0; i < labels.Length; i++)
         {
-            int bx = startX + i * (TAB_W + TAB_GAP);
-            if (!Clicked(click, bx, tabY, TAB_W, MENU_BH)) continue;
+            int tx = startX + i * (TAB_W + TAB_GAP);
+            bool sel   = activeTab == i;
+            bool hover = _mousePos.X >= tx && _mousePos.X <= tx + TAB_W &&
+                         _mousePos.Y >= tabY && _mousePos.Y <= tabY + MENU_BH;
+            Color tbg   = sel   ? new Color(50, 70, 140)
+                       : hover  ? new Color(44, 55, 110)
+                                : new Color(38, 42, 72);
+            Color tedge = sel   ? new Color(110, 150, 255) : new Color(50, 60, 100);
+            Color tc    = sel   ? Color.White
+                       : hover  ? new Color(200, 210, 255)
+                                : new Color(160, 170, 210);
+            R(tx + 3, tabY + 3, TAB_W, MENU_BH, new Color(0, 0, 0, 60));
+            R(tx, tabY, TAB_W, MENU_BH, tbg);
+            R(tx, tabY, TAB_W, 2, tedge);
+            R(tx, tabY + MENU_BH - 2, TAB_W, 2, sel ? new Color(110, 150, 255) : new Color(38, 42, 72));
+            R(tx, tabY, 2, MENU_BH, tedge);
+            R(tx + TAB_W - 2, tabY, 2, MENU_BH, tedge);
+            TxtBig(labels[i], tx + TAB_W/2 - TxtBigW(labels[i])/2, tabY + MENU_BH/2 - _fontBig.LineSpacing/2, tc);
+        }
+    }
+
+    bool HandleMenuTabsClick(bool click)
+    {
+        if (!click) return false;
+        string[] labels = { "PLAY", "CONFIG", "SHOP", "CHALLENGES" };
+        const int TAB_W = 220, TAB_GAP = 20;
+        int totalW = labels.Length * TAB_W + (labels.Length - 1) * TAB_GAP;
+        int startX = SW / 2 - totalW / 2;
+        int tabY = 60;
+        for (int i = 0; i < labels.Length; i++)
+        {
+            int tx = startX + i * (TAB_W + TAB_GAP);
+            if (!Clicked(click, tx, tabY, TAB_W, MENU_BH)) continue;
             if      (i == 0) _state = GameState.PlayMenu;
             else if (i == 1) { _state = GameState.SkinConfig; _configScrollY = 0; }
             else if (i == 2) _state = GameState.Shop;
             else             _state = GameState.Challenges;
-            break;
+            return true;
         }
+        return false;
     }
 
     void DrawPlayMenu()
     {
         DrawMenuBg();
+        DrawMenuTabs(0);
         int cx = SW / 2, cy = SH / 2;
         string title = "PLAY";
         TxtBig(title, cx - TxtBigW(title)/2, cy - 160, new Color(100, 140, 255));
@@ -84,12 +99,11 @@ public partial class Game1
         int startY = cy - totalH / 2 + 20;
         for (int i = 0; i < labels.Length; i++)
             DrawButton(cx - MENU_BW / 2, startY + i * (MENU_BH + MENU_GAP), MENU_BW, MENU_BH, labels[i]);
-
-        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, cy + 120, new Color(100, 110, 160));
     }
 
     void HandlePlayMenuClick(bool click)
     {
+        if (HandleMenuTabsClick(click)) return;
         if (!click) return;
         int cx = SW / 2, cy = SH / 2;
         string[] labels = { "LOCAL VS BOT", "MULTIPLAYER" };

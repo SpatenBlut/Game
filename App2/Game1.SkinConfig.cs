@@ -7,15 +7,13 @@ public partial class Game1
     {
         DrawMenuBg();
         int cx = SW / 2;
-
-        string title = "CONFIG";
-        TxtBig(title, cx - TxtBigW(title)/2, 30, new Color(100, 140, 255));
+        DrawMenuTabs(1);
 
         string[] tabLabels = { "SKIN", "ARMS" };
         const int tabW = 150, tabH = 32, tabGap = 8;
         int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
         int tabStartX  = cx - totalTabsW / 2;
-        int tabY       = 60;
+        int tabY       = 126;
 
         for (int t = 0; t < tabLabels.Length; t++)
         {
@@ -181,7 +179,6 @@ public partial class Game1
             }
         }
 
-        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, SH - _fontMed.LineSpacing - 10, new Color(100, 110, 160));
 
         // ── Pattern Picker overlay ────────────────────────────────────────────
         if (_showCHPicker)
@@ -276,6 +273,7 @@ public partial class Game1
             return;
         }
 
+        if (click && HandleMenuTabsClick(click)) return;
         if (!click && !rightClick) return;
         int cx = SW / 2;
 
@@ -283,7 +281,7 @@ public partial class Game1
         const int tabW = 150, tabH = 32, tabGap = 8;
         int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
         int tabStartX  = cx - totalTabsW / 2;
-        int tabY       = 60;
+        int tabY       = 126;
 
         for (int t = 0; t < tabLabels.Length; t++)
         {
@@ -293,7 +291,7 @@ public partial class Game1
 
         if (_configTab == 1 && click)
         {
-            int armContentY = tabY + tabH + 24;
+            int armContentY = tabY + tabH + 10 + 14;
             const int tileW2 = 300, tileH2 = 54, gapY2 = 10;
             int startX2 = cx - tileW2 / 2;
             for (int i = 0; i < ARM_SKINS.Length; i++)
@@ -310,7 +308,7 @@ public partial class Game1
 
         if (_configTab != 0) return;
 
-        int contentY = tabY + tabH + 24;
+        int contentY = tabY + tabH + 10 + 14;
         const int tileW = 300, tileH = 54, gapY = 10;
         int startX = cx - tileW / 2;
 

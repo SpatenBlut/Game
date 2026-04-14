@@ -36,12 +36,12 @@ public partial class Game1 : Game
         if (KeyJustPressed(keys, Keys.Escape) && _state != GameState.Menu && _state != GameState.NameEntry)
         {
             if (_state == GameState.PlayMenu || _state == GameState.Shop || _state == GameState.Challenges || _state == GameState.SkinConfig)
-                _state = GameState.Menu;
+                _state = GameState.PlayMenu;
             else
             {
                 if (!_isLocalMode) { _net.Dispose(); _net = new GameNet(); }
                 _isLocalMode = false;
-                _state = GameState.Menu;
+                _state = GameState.PlayMenu;
             }
         }
         if (KeyJustPressed(keys, Keys.F1))     _debugOpen = !_debugOpen;
@@ -66,10 +66,10 @@ public partial class Game1 : Game
             if (KeyJustPressed(keys, Keys.Enter) && _playerName.Length >= 1)
             {
                 SaveGame();
-                _state = GameState.Menu;
+                _state = GameState.PlayMenu;
             }
         }
-        else if (_state == GameState.Menu)          HandleMenuClick(mouseClick);
+        else if (_state == GameState.Menu)          HandlePlayMenuClick(mouseClick);
         else if (_state == GameState.PlayMenu)      HandlePlayMenuClick(mouseClick);
         else if (_state == GameState.Shop)
         {
@@ -194,7 +194,7 @@ public partial class Game1 : Game
         if (_state == GameState.GameOver && KeyJustPressed(keys, Keys.R))
         {
             ResetMatch();
-            _state = GameState.Menu;
+            _state = GameState.PlayMenu;
         }
 
         for (int i = _particles.Count - 1; i >= 0; i--)
@@ -226,7 +226,7 @@ public partial class Game1 : Game
         switch (_state)
         {
             case GameState.NameEntry:   DrawNameEntry();  break;
-            case GameState.Menu:        DrawMenu();       break;
+            case GameState.Menu:        DrawPlayMenu();   break;
             case GameState.PlayMenu:    DrawPlayMenu();   break;
             case GameState.Shop:        DrawShop();       break;
             case GameState.Challenges:  DrawChallenges(); break;

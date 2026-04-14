@@ -137,11 +137,7 @@ public partial class Game1
         }
 
         // ── Normal shop view ─────────────────────────────────────────────────
-        string title = "SHOP";
-        TxtBig(title, cx - TxtBigW(title)/2, 28, new Color(100, 140, 255));
-
-        string coinsStr = $"COINS: {_coins}";
-        TxtBig(coinsStr, SW - TxtBigW(coinsStr) - 20, 20, new Color(255, 200, 50));
+        DrawMenuTabs(2);
 
         const int chestPanW = 420, chestPanH = 100;
         int chestX    = cx - chestPanW / 2;
@@ -226,11 +222,11 @@ public partial class Game1
             }
         }
 
-        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, SH - 36, new Color(100, 110, 160));
     }
 
     void HandleShopClick(bool click)
     {
+        if (HandleMenuTabsClick(click)) return;
         if (!click) return;
         int cx = SW / 2;
 

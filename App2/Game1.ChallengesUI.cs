@@ -7,12 +7,11 @@ public partial class Game1
     {
         DrawMenuBg();
         int cx = SW / 2;
-        string title = "CHALLENGES";
-        TxtBig(title, cx - TxtBigW(title)/2, 36, new Color(100, 140, 255));
+        DrawMenuTabs(3);
 
         const int tileW = 560, tileH = 80, gapY = 10;
         int startX = cx - tileW / 2;
-        int startY = 86;
+        int startY = 134;
 
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
@@ -71,15 +70,15 @@ public partial class Game1
             visIdx++;
         }
 
-        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, SH - _fontMed.LineSpacing - 10, new Color(100, 110, 160));
     }
 
     void HandleChallengesClick(bool click)
     {
+        if (HandleMenuTabsClick(click)) return;
         if (!click) return;
         const int tileW = 560, tileH = 80, gapY = 10;
         int startX = SW / 2 - tileW / 2;
-        int startY = 86;
+        int startY = 134;
 
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
