@@ -165,6 +165,24 @@ public partial class Game1
         ("LIGHTNING",    "Speed win 5 times",        5,    670),
         ("FLASH",        "Speed win 10 times",      10,   1250),
         ("SONIC",        "Speed win 20 times",      20,   2300),
+        // ── HEAVY HITS (indices 64-68) ────────────────────────────────────────
+        ("HEAVY HITTER", "Land 10 heavy hits",      10,    140),
+        ("HARD PUNCHER", "Land 30 heavy hits",      30,    290),
+        ("BONE BREAKER", "Land 75 heavy hits",      75,    520),
+        ("PILE DRIVER",  "Land 150 heavy hits",    150,    870),
+        ("WRECKING BALL","Land 300 heavy hits",    300,   1500),
+        // ── CHESTS OPENED (indices 69-73) ────────────────────────────────────
+        ("FIRST LOOT",   "Open 3 chests",            3,    160),
+        ("COLLECTOR",    "Open 10 chests",          10,    330),
+        ("HOARDER",      "Open 25 chests",          25,    620),
+        ("TREASURE HUNTER","Open 60 chests",        60,   1200),
+        ("LOOT KING",    "Open 150 chests",        150,   2400),
+        // ── MATCHES PLAYED (indices 74-78) ───────────────────────────────────
+        ("ROOKIE",       "Play 10 matches",         10,    120),
+        ("REGULAR",      "Play 30 matches",         30,    240),
+        ("VETERAN PLAYER","Play 75 matches",        75,    440),
+        ("GRINDER",      "Play 150 matches",       150,    820),
+        ("ADDICTED",     "Play 300 matches",       300,   1600),
     };
 
     string _playerName      = "";
@@ -174,8 +192,10 @@ public partial class Game1
     int    _coins           = 0;
     long   _ownedSkins      = (1L << 0) | (1L << 8);  // DEFAULT + NAVY always owned
     long   _chalClaimed     = 0;
+    long   _chalClaimedHi   = 0;
     long   _chalActivated   = 0;
-    int[]  _chalBaselines   = new int[64];
+    long   _chalActivatedHi = 0;
+    int[]  _chalBaselines   = new int[128];
     int    _statWins        = 0;
     int    _statHits        = 0;
     int    _statDmgDealt    = 0;
@@ -183,6 +203,9 @@ public partial class Game1
     int    _statPerfectWins = 0;
     int    _statFastWin     = 0;
     int    _statCurStreak   = 0;
+    int    _statHeavyHits   = 0;
+    int    _statChestsOpened = 0;
+    int    _statMatches     = 0;
 
     Vector2 _mousePos;
 
@@ -238,6 +261,7 @@ public partial class Game1
 
     int _configTab     = 0;
     int _configScrollY = 0;
+    int _selectedMap   = 0;
 
     Color[] _damascusPixels;
     int     _damascusW, _damascusH;

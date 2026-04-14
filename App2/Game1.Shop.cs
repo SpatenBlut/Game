@@ -30,6 +30,8 @@ public partial class Game1
                 _ownedSkins |= (1L << _chestAnimPick);
         }
         _chestResult = _chestAnimPick;
+        _statChestsOpened++;
+        _chalDirty = true;
         SaveGame();
     }
 
@@ -41,6 +43,8 @@ public partial class Game1
         if (!_chestLastDuplicate)
             _ownedArmSkins |= (1L << _chestAnimPick);
         _armChestResult = _chestAnimPick;
+        _statChestsOpened++;
+        _chalDirty = true;
         SaveGame();
     }
 
@@ -139,37 +143,37 @@ public partial class Game1
         // ── Normal shop view ─────────────────────────────────────────────────
         DrawMenuTabs(2);
 
-        const int chestPanW = 420, chestPanH = 100;
-        int chestX    = cx - chestPanW / 2;
-        int chestY    = SH / 2 - chestPanH - 28;   // body chest
-        int armChestY = SH / 2 + 28;               // arm chest
+        const int chestPanW = 420, chestPanH = 100, chestGap = 40;
+        int chestY  = SH / 2 - chestPanH / 2;
+        int bodyX   = cx - chestPanW - chestGap / 2;   // body chest (left)
+        int armX    = cx + chestGap / 2;               // arm chest (right)
 
         // ── Body chest panel ─────────────────────────────────────────────────
         {
             bool canAfford = _coins >= CHEST_PRICE;
             bool hover = canAfford &&
-                         _mousePos.X >= chestX && _mousePos.X <= chestX + chestPanW &&
+                         _mousePos.X >= bodyX && _mousePos.X <= bodyX + chestPanW &&
                          _mousePos.Y >= chestY && _mousePos.Y <= chestY + chestPanH;
 
             Color edge = !canAfford ? new Color(70, 70, 55)
                        : hover      ? new Color(255, 220, 80)
                                     : new Color(200, 160, 40);
 
-            R(chestX + 3, chestY + 3, chestPanW, chestPanH, new Color(0, 0, 0, 70));
-            R(chestX, chestY, chestPanW, chestPanH, new Color(40, 43, 68));
-            R(chestX, chestY, chestPanW, 2, edge);
-            R(chestX, chestY + chestPanH - 2, chestPanW, 2, edge);
-            R(chestX, chestY, 2, chestPanH, edge);
-            R(chestX + chestPanW - 2, chestY, 2, chestPanH, edge);
+            R(bodyX + 3, chestY + 3, chestPanW, chestPanH, new Color(0, 0, 0, 70));
+            R(bodyX, chestY, chestPanW, chestPanH, new Color(40, 43, 68));
+            R(bodyX, chestY, chestPanW, 2, edge);
+            R(bodyX, chestY + chestPanH - 2, chestPanW, 2, edge);
+            R(bodyX, chestY, 2, chestPanH, edge);
+            R(bodyX + chestPanW - 2, chestY, 2, chestPanH, edge);
 
-            int cix = chestX + 52, ciy = chestY + chestPanH / 2;
+            int cix = bodyX + 52, ciy = chestY + chestPanH / 2;
             R(cix - 22, ciy - 13, 44, 30, new Color(120, 80, 10));
             R(cix - 24, ciy - 15, 44, 30, new Color(210, 145, 25));
             R(cix - 24, ciy - 15, 44, 13, new Color(255, 195, 45));
             R(cix - 24, ciy - 3,  44, 2,  new Color(90, 60, 5));
             DrawEllipse(cix, ciy + 6, 5, 5, new Color(255, 215, 60));
 
-            int tx = chestX + 98;
+            int tx = bodyX + 98;
             TxtMed("BODY CHEST", tx, chestY + 14, new Color(255, 200, 50));
             string prStr = $"OPEN FOR {CHEST_PRICE} COINS";
             Color  prCol = canAfford ? (hover ? Color.White : new Color(255, 200, 50))
@@ -180,7 +184,7 @@ public partial class Game1
             {
                 string lastStr = $"LAST: {ChestDisplayName(_chestResult)}";
                 Color  lastCol = SkinColor(_chestResult, _menuTime);
-                TxtMed(lastStr, cx - TxtMedW(lastStr)/2, chestY + chestPanH + 12, lastCol);
+                TxtMed(lastStr, bodyX + chestPanW/2 - TxtMedW(lastStr)/2, chestY + chestPanH + 12, lastCol);
             }
         }
 
@@ -188,37 +192,37 @@ public partial class Game1
         {
             bool canAfford = _coins >= CHEST_PRICE;
             bool hover = canAfford &&
-                         _mousePos.X >= chestX && _mousePos.X <= chestX + chestPanW &&
-                         _mousePos.Y >= armChestY && _mousePos.Y <= armChestY + chestPanH;
+                         _mousePos.X >= armX && _mousePos.X <= armX + chestPanW &&
+                         _mousePos.Y >= chestY && _mousePos.Y <= chestY + chestPanH;
 
             Color edge = !canAfford ? new Color(55, 70, 70)
                        : hover      ? new Color(80, 220, 255)
                                     : new Color(40, 160, 200);
 
-            R(chestX + 3, armChestY + 3, chestPanW, chestPanH, new Color(0, 0, 0, 70));
-            R(chestX, armChestY, chestPanW, chestPanH, new Color(38, 50, 60));
-            R(chestX, armChestY, chestPanW, 2, edge);
-            R(chestX, armChestY + chestPanH - 2, chestPanW, 2, edge);
-            R(chestX, armChestY, 2, chestPanH, edge);
-            R(chestX + chestPanW - 2, armChestY, 2, chestPanH, edge);
+            R(armX + 3, chestY + 3, chestPanW, chestPanH, new Color(0, 0, 0, 70));
+            R(armX, chestY, chestPanW, chestPanH, new Color(38, 50, 60));
+            R(armX, chestY, chestPanW, 2, edge);
+            R(armX, chestY + chestPanH - 2, chestPanW, 2, edge);
+            R(armX, chestY, 2, chestPanH, edge);
+            R(armX + chestPanW - 2, chestY, 2, chestPanH, edge);
 
             // Arm icon (simple sleeve shape)
-            int cix = chestX + 52, ciy = armChestY + chestPanH / 2;
+            int cix = armX + 52, ciy = chestY + chestPanH / 2;
             DrawEllipse(cix, ciy, 18, 12, new Color(40, 160, 200));
             DrawEllipse(cix + 8, ciy + 8, 10, 8, new Color(30, 120, 160));
 
-            int tx = chestX + 98;
-            TxtMed("ARM CHEST", tx, armChestY + 14, new Color(80, 220, 255));
+            int tx = armX + 98;
+            TxtMed("ARM CHEST", tx, chestY + 14, new Color(80, 220, 255));
             string prStr = $"OPEN FOR {CHEST_PRICE} COINS";
             Color  prCol = canAfford ? (hover ? Color.White : new Color(80, 220, 255))
                                      : new Color(70, 80, 80);
-            TxtMed(prStr, tx, armChestY + 46, prCol);
+            TxtMed(prStr, tx, chestY + 46, prCol);
 
             if (_armChestResult >= 0)
             {
                 string lastStr = $"LAST: {ARM_SKINS[_armChestResult].Name}";
                 Color  lastCol = _armChestLastDuplicate ? new Color(120, 120, 140) : ARM_SKINS[_armChestResult].Col;
-                TxtMed(lastStr, cx - TxtMedW(lastStr)/2, armChestY + chestPanH + 12, lastCol);
+                TxtMed(lastStr, armX + chestPanW/2 - TxtMedW(lastStr)/2, chestY + chestPanH + 12, lastCol);
             }
         }
 
@@ -230,13 +234,13 @@ public partial class Game1
         if (!click) return;
         int cx = SW / 2;
 
-        const int chestPanW = 420, chestPanH = 100;
-        int chestX    = cx - chestPanW / 2;
-        int chestY    = SH / 2 - chestPanH - 28;
-        int armChestY = SH / 2 + 28;
+        const int chestPanW = 420, chestPanH = 100, chestGap = 40;
+        int chestY = SH / 2 - chestPanH / 2;
+        int bodyX  = cx - chestPanW - chestGap / 2;
+        int armX   = cx + chestGap / 2;
 
         // ── Body chest click ─────────────────────────────────────────────────
-        if (Clicked(click, chestX, chestY, chestPanW, chestPanH))
+        if (Clicked(click, bodyX, chestY, chestPanW, chestPanH))
         {
             if (_coins < CHEST_PRICE) return;
 
@@ -291,7 +295,7 @@ public partial class Game1
         }
 
         // ── Arm chest click ──────────────────────────────────────────────────
-        if (Clicked(click, chestX, armChestY, chestPanW, chestPanH))
+        if (Clicked(click, armX, chestY, chestPanW, chestPanH))
         {
             if (_coins < CHEST_PRICE) return;
 

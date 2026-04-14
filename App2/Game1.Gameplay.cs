@@ -7,24 +7,55 @@ public partial class Game1
     void BuildMap()
     {
         _platforms.Clear();
+        switch (_selectedMap)
+        {
+            default:
+            case 0: // CLASSIC
+                _platforms.Add(new Platform(-500,  220, 1000, 30, PlatType.Main));
+                _platforms.Add(new Platform(-820,  340,  220, 22, PlatType.Side));
+                _platforms.Add(new Platform( 600,  340,  220, 22, PlatType.Side));
+                _platforms.Add(new Platform(-680,   80,  230, 22, PlatType.Side));
+                _platforms.Add(new Platform( 450,   80,  230, 22, PlatType.Side));
+                _platforms.Add(new Platform(-155,  -80,  310, 22, PlatType.Side));
+                _platforms.Add(new Platform(-820,  -80,  170, 18, PlatType.Small));
+                _platforms.Add(new Platform( 650,  -80,  170, 18, PlatType.Small));
+                _platforms.Add(new Platform( -90, -260,  180, 18, PlatType.Small));
+                _platforms.Add(new Platform(-390,   70,  110, 16, PlatType.Small));
+                _platforms.Add(new Platform( 280,   70,  110, 16, PlatType.Small));
+                break;
 
-        _platforms.Add(new Platform(-500,  220, 1000, 30, PlatType.Main));
+            case 1: // SPACE — offen, wenige Plattformen
+                _platforms.Add(new Platform(-420,  220,  840, 30, PlatType.Main));
+                _platforms.Add(new Platform(-820,   80,  220, 22, PlatType.Side));
+                _platforms.Add(new Platform( 600,   80,  220, 22, PlatType.Side));
+                _platforms.Add(new Platform(-140,  -80,  280, 22, PlatType.Side));
+                _platforms.Add(new Platform(-820, -220,  160, 18, PlatType.Small));
+                _platforms.Add(new Platform( 660, -220,  160, 18, PlatType.Small));
+                _platforms.Add(new Platform(-100, -300,  200, 18, PlatType.Small));
+                break;
 
-        _platforms.Add(new Platform(-820,  340,  220, 22, PlatType.Side));
-        _platforms.Add(new Platform( 600,  340,  220, 22, PlatType.Side));
+            case 2: // BRIDGE — lange Brücke mit Etagen
+                _platforms.Add(new Platform(-680,  250, 1360, 28, PlatType.Main));
+                _platforms.Add(new Platform(-420,   60,  260, 22, PlatType.Side));
+                _platforms.Add(new Platform( 160,   60,  260, 22, PlatType.Side));
+                _platforms.Add(new Platform(-160, -120,  320, 22, PlatType.Side));
+                _platforms.Add(new Platform(-880,  120,  160, 18, PlatType.Small));
+                _platforms.Add(new Platform( 720,  120,  160, 18, PlatType.Small));
+                _platforms.Add(new Platform( -90, -280,  180, 18, PlatType.Small));
+                break;
 
-        _platforms.Add(new Platform(-680,   80,  230, 22, PlatType.Side));
-        _platforms.Add(new Platform( 450,   80,  230, 22, PlatType.Side));
-
-        _platforms.Add(new Platform(-155,  -80,  310, 22, PlatType.Side));
-
-        _platforms.Add(new Platform(-820,  -80,  170, 18, PlatType.Small));
-        _platforms.Add(new Platform( 650,  -80,  170, 18, PlatType.Small));
-
-        _platforms.Add(new Platform( -90, -260,  180, 18, PlatType.Small));
-
-        _platforms.Add(new Platform(-390,   70,  110, 16, PlatType.Small));
-        _platforms.Add(new Platform( 280,   70,  110, 16, PlatType.Small));
+            case 3: // RUINS — zwei getrennte Böden, Trümmer
+                _platforms.Add(new Platform(-880,  260,  440, 28, PlatType.Main));
+                _platforms.Add(new Platform( 440,  260,  440, 28, PlatType.Main));
+                _platforms.Add(new Platform(-200,  160,  400, 22, PlatType.Side));
+                _platforms.Add(new Platform(-640,   40,  200, 22, PlatType.Side));
+                _platforms.Add(new Platform( 440,   40,  200, 22, PlatType.Side));
+                _platforms.Add(new Platform(-140, -100,  280, 22, PlatType.Side));
+                _platforms.Add(new Platform(-880,  -60,  150, 18, PlatType.Small));
+                _platforms.Add(new Platform( 730,  -60,  150, 18, PlatType.Small));
+                _platforms.Add(new Platform(-100, -280,  200, 18, PlatType.Small));
+                break;
+        }
     }
 
     void ResetRound()
@@ -44,6 +75,7 @@ public partial class Game1
     {
         _scoreP1    = 0;
         _scoreEnemy = 0;
+        BuildMap();
         ResetRound();
     }
 
@@ -94,6 +126,7 @@ public partial class Game1
         bool localWon = _isLocalMode ? winner == 1
                       : _net.Role == NetRole.Host ? winner == 1 : winner == 2;
 
+        _statMatches++;
         if (localWon)
         {
             _statWins++;
@@ -108,6 +141,7 @@ public partial class Game1
         {
             _statCurStreak = 0;
         }
+        _chalDirty = true;
 
         SaveGame();
     }

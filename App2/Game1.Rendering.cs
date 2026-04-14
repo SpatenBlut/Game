@@ -240,12 +240,12 @@ public partial class Game1
         if (_debugOpen)
             Txt(p.State, cx - TxtW(p.State)/2, bcy - ry - _fontBig.LineSpacing - _fontSmall.LineSpacing - 8, new Color(160, 165, 200));
 
+        if (p.DodgeCD > 0)
         {
             float ratio = 1f - Math.Clamp(p.DodgeCD / Player.DODGE_CD, 0f, 1f);
             int   barW  = rx * 2;
-            Color barCol = ratio >= 1f ? new Color(80, 220, 120) : new Color(80, 180, 255);
-            R(cx - barW / 2, fy + 6, barW, 3, new Color(30, 32, 50));
-            R(cx - barW / 2, fy + 6, (int)(barW * ratio), 3, barCol);
+            R(cx - barW / 2, fy + 6, barW, 3, new Color(20, 22, 38));
+            R(cx - barW / 2, fy + 6, (int)(barW * ratio), 3, new Color(80, 180, 255));
         }
 
         Color wa = new Color(255, 50, 50, 200);

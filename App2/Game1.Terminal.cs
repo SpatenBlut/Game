@@ -50,6 +50,7 @@ public partial class Game1
                 TermPrint("unlock --all           Unlock all skins", info);
                 TermPrint("lock --all             Remove all skins", info);
                 TermPrint("challenges --complete  Complete challenges", info);
+                TermPrint("challenges --reset     Reset all challenges", info);
             }
             else
             {
@@ -119,28 +120,31 @@ public partial class Game1
                     int visI = 0, done = 0;
                     for (int i = 0; i < CHALLENGES.Length && visI < 7; i++)
                     {
-                        if ((_chalClaimed & (1L << i)) != 0) continue;
+                        if (IsChalClaimed(i)) continue;
                         visI++;
-                        if ((_chalActivated & (1L << i)) == 0)
+                        if (!IsChalActivated(i))
                         {
                             _chalBaselines[i] = ChalStat(i);
-                            _chalActivated |= (1L << i);
+                            SetChalActivated(i);
                         }
                         _chalBaselines[i] = ChalStat(i) - CHALLENGES[i].Target;
-                        _chalClaimed  |= (1L << i);
-                        _coins        += CHALLENGES[i].Coins;
+                        SetChalClaimed(i);
+                        _coins += CHALLENGES[i].Coins;
                         done++;
                     }
-                    bool allDone = true;
-                    for (int j = 0; j < CHALLENGES.Length; j++)
-                        if ((_chalClaimed & (1L << j)) == 0) { allDone = false; break; }
-                    if (allDone) { _chalClaimed = 0; _chalActivated = 0; }
+                    if (AllChalsClaimed()) ResetAllChals();
                     SaveGame();
                     TermPrint($"Completed & claimed {done} challenge(s).", ok);
                 }
+                else if (parts.Length >= 2 && parts[1].ToLower() == "--reset")
+                {
+                    ResetAllChals();
+                    SaveGame();
+                    TermPrint("All challenges reset.", ok);
+                }
                 else
                 {
-                    TermPrint("Usage: challenges --complete", err);
+                    TermPrint("Usage: challenges --complete | --reset", err);
                 }
                 break;
 

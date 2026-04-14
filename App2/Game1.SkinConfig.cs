@@ -9,35 +9,36 @@ public partial class Game1
         int cx = SW / 2;
         DrawMenuTabs(1);
 
+        // ── Vertikale SKIN/ARMS Sub-Tabs links, vertikal zentriert ────────────
         string[] tabLabels = { "SKIN", "ARMS" };
-        const int tabW = 150, tabH = 32, tabGap = 8;
-        int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
-        int tabStartX  = cx - totalTabsW / 2;
-        int tabY       = 126;
+        const int tabW = 140, tabH = 44, tabGap = 10, tabX = 30;
+        int contentAreaTop = 130;
+        int totalTabsH = tabLabels.Length * tabH + (tabLabels.Length - 1) * tabGap;
+        int tabStartY  = contentAreaTop + (SH - contentAreaTop - totalTabsH) / 2;
 
         for (int t = 0; t < tabLabels.Length; t++)
         {
-            int tx     = tabStartX + t * (tabW + tabGap);
+            int ty     = tabStartY + t * (tabH + tabGap);
             bool sel   = _configTab == t;
-            bool hover = _mousePos.X >= tx && _mousePos.X <= tx + tabW &&
-                         _mousePos.Y >= tabY && _mousePos.Y <= tabY + tabH;
+            bool hover = _mousePos.X >= tabX && _mousePos.X <= tabX + tabW &&
+                         _mousePos.Y >= ty   && _mousePos.Y <= ty + tabH;
             Color tbg  = sel   ? new Color(50, 70, 140)
                        : hover ? new Color(34, 42, 90)
                                : new Color(34, 38, 66);
             Color tedge = sel  ? new Color(110, 150, 255) : new Color(44, 52, 90);
-            R(tx + 2, tabY + 2, tabW, tabH, new Color(0, 0, 0, 50));
-            R(tx, tabY, tabW, tabH, tbg);
-            R(tx, tabY, tabW, 2, tedge);
-            R(tx, tabY + tabH - 2, tabW, 2, sel ? new Color(110, 150, 255) : new Color(34, 38, 66));
-            R(tx, tabY, 2, tabH, tedge);
-            R(tx + tabW - 2, tabY, 2, tabH, tedge);
+            R(tabX + 2, ty + 2, tabW, tabH, new Color(0, 0, 0, 50));
+            R(tabX, ty, tabW, tabH, tbg);
+            R(tabX, ty, tabW, 2, tedge);
+            R(tabX, ty + tabH - 2, tabW, 2, tedge);
+            R(tabX, ty, 2, tabH, tedge);
+            R(tabX + tabW - 2, ty, 2, tabH, sel ? new Color(110, 150, 255) : new Color(44, 52, 90));
             Color tc = sel ? Color.White : new Color(140, 150, 200);
-            TxtMed(tabLabels[t], tx + tabW/2 - TxtMedW(tabLabels[t])/2, tabY + tabH/2 - _fontMed.LineSpacing/2, tc);
+            TxtMed(tabLabels[t], tabX + tabW/2 - TxtMedW(tabLabels[t])/2, ty + tabH/2 - _fontMed.LineSpacing/2, tc);
         }
+        // Vertikale Trennlinie rechts neben den Tabs
+        R(tabX + tabW + 8, contentAreaTop, 1, SH - contentAreaTop, new Color(44, 52, 90));
 
-        int contentY = tabY + tabH + 10;
-        R(cx - totalTabsW / 2, contentY, totalTabsW, 1, new Color(50, 60, 100));
-        contentY += 14;
+        int contentY = contentAreaTop + 10;
 
         if (_configTab == 1)
         {
@@ -278,20 +279,20 @@ public partial class Game1
         int cx = SW / 2;
 
         string[] tabLabels = { "SKIN", "ARMS" };
-        const int tabW = 150, tabH = 32, tabGap = 8;
-        int totalTabsW = tabLabels.Length * tabW + (tabLabels.Length - 1) * tabGap;
-        int tabStartX  = cx - totalTabsW / 2;
-        int tabY       = 126;
+        const int tabW = 140, tabH = 44, tabGap = 10, tabX = 30;
+        int contentAreaTop = 130;
+        int totalTabsH = tabLabels.Length * tabH + (tabLabels.Length - 1) * tabGap;
+        int tabStartY  = contentAreaTop + (SH - contentAreaTop - totalTabsH) / 2;
 
         for (int t = 0; t < tabLabels.Length; t++)
         {
-            int tx = tabStartX + t * (tabW + tabGap);
-            if (Clicked(click, tx, tabY, tabW, tabH)) { _configTab = t; return; }
+            int ty = tabStartY + t * (tabH + tabGap);
+            if (Clicked(click, tabX, ty, tabW, tabH)) { _configTab = t; return; }
         }
 
         if (_configTab == 1 && click)
         {
-            int armContentY = tabY + tabH + 10 + 14;
+            int armContentY = contentAreaTop + 10;
             const int tileW2 = 300, tileH2 = 54, gapY2 = 10;
             int startX2 = cx - tileW2 / 2;
             for (int i = 0; i < ARM_SKINS.Length; i++)
@@ -308,7 +309,7 @@ public partial class Game1
 
         if (_configTab != 0) return;
 
-        int contentY = tabY + tabH + 10 + 14;
+        int contentY = contentAreaTop + 10;
         const int tileW = 300, tileH = 54, gapY = 10;
         int startX = cx - tileW / 2;
 

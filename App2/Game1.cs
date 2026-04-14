@@ -35,7 +35,7 @@ public partial class Game1 : Game
 
         if (KeyJustPressed(keys, Keys.Escape) && _state != GameState.Menu && _state != GameState.NameEntry)
         {
-            if (_state == GameState.PlayMenu || _state == GameState.Shop || _state == GameState.Challenges || _state == GameState.SkinConfig)
+            if (_state == GameState.PlayMenu || _state == GameState.Shop || _state == GameState.Challenges || _state == GameState.SkinConfig || _state == GameState.MapSelect)
                 _state = GameState.PlayMenu;
             else
             {
@@ -91,6 +91,7 @@ public partial class Game1 : Game
             }
             else HandleShopClick(mouseClick);
         }
+        else if (_state == GameState.MapSelect)      HandleMapSelectClick(mouseClick);
         else if (_state == GameState.Challenges)    HandleChallengesClick(mouseClick);
         else if (_state == GameState.SkinConfig)
         {
@@ -117,7 +118,7 @@ public partial class Game1 : Game
 
             byte p1AimAngle = MouseAimAngle(_p1);
             PlayerInput p1Local = PlayerInput.FromKeyboard(keys, _prevKeys, mouseClick, p1AimAngle,
-                Keys.A, Keys.D, Keys.W, Keys.S, Keys.LeftControl);
+                Keys.A, Keys.D, Keys.W, Keys.S, Keys.D3);
 
             PlayerInput p1Input, p2Input;
             if (_isLocalMode)
@@ -129,7 +130,7 @@ public partial class Game1 : Game
             {
                 byte p2AimAngle = MouseAimAngle(_p2);
                 PlayerInput p2Local = PlayerInput.FromKeyboard(keys, _prevKeys, mouseClick, p2AimAngle,
-                    Keys.A, Keys.D, Keys.W, Keys.S, Keys.LeftControl);
+                    Keys.A, Keys.D, Keys.W, Keys.S, Keys.D3);
 
                 _net.Update(dt);
                 PlayerInput myInput = _net.Role == NetRole.Host ? p1Local : p2Local;
@@ -168,13 +169,13 @@ public partial class Game1 : Game
 
                 if (_p1.OnHitLanded == null)
                 {
-                    _p1.OnHitLanded = (v, vel, dmg, hs) => { _statHits++; _statDmgDealt += (int)dmg; _chalDirty = true; _net.SendHit(v.Id, vel, dmg, hs); };
+                    _p1.OnHitLanded = (v, vel, dmg, hs) => { _statHits++; _statDmgDealt += (int)dmg; if (dmg >= 15f) _statHeavyHits++; _chalDirty = true; _net.SendHit(v.Id, vel, dmg, hs); };
                     _p2.OnHitLanded = (v, vel, dmg, hs) => _net.SendHit(v.Id, vel, dmg, hs);
                 }
             }
 
             if (_isLocalMode && _p1.OnHitLanded == null)
-                _p1.OnHitLanded = (v, vel, dmg, hs) => { _statHits++; _statDmgDealt += (int)dmg; _chalDirty = true; };
+                _p1.OnHitLanded = (v, vel, dmg, hs) => { _statHits++; _statDmgDealt += (int)dmg; if (dmg >= 15f) _statHeavyHits++; _chalDirty = true; };
 
             bool p1Auth = _isLocalMode || _net.Role == NetRole.Host;
             bool p2Auth = _isLocalMode || _net.Role == NetRole.Client;
@@ -220,6 +221,18 @@ public partial class Game1 : Game
 
     protected override void Draw(GameTime gt)
     {
+        try { DrawInner(gt); }
+        catch (Exception ex)
+        {
+            Logger.LogException("Draw", ex);
+            Logger.Log($"GameState={_state}");
+            Logger.Close();
+            throw;
+        }
+    }
+
+    void DrawInner(GameTime gt)
+    {
         GraphicsDevice.Clear(new Color(40, 44, 65));
         _spriteBatch.Begin();
 
@@ -231,6 +244,7 @@ public partial class Game1 : Game
             case GameState.Shop:        DrawShop();       break;
             case GameState.Challenges:  DrawChallenges(); break;
             case GameState.SkinConfig:  DrawSkinConfig(); break;
+            case GameState.MapSelect:   DrawMapSelect();  break;
             case GameState.Lobby:       DrawLobby();      break;
             default:
                 DrawBackground();
@@ -249,6 +263,8 @@ public partial class Game1 : Game
         }
 
         if (_termOpen) DrawTerminal();
+        string fpsStr = $"FPS {(int)_fps}";
+        Txt(fpsStr, 8, SH - _fontSmall.LineSpacing - 6, new Color(70, 80, 110));
         _spriteBatch.End();
         base.Draw(gt);
     }

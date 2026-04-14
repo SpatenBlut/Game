@@ -33,7 +33,7 @@ public partial class Game1
             if (ver >= 4)
             {
                 _chalActivated = br.ReadInt64();
-                for (int i = 0; i < _chalBaselines.Length; i++)
+                for (int i = 0; i < 64; i++)
                     _chalBaselines[i] = br.ReadInt32();
             }
             if (ver >= 6)
@@ -51,6 +51,16 @@ public partial class Game1
                 _ownedArmSkins = br.ReadInt64();
             _ownedArmSkins |= (1L << 0);  // DEFAULT always free
             if (!ArmSkinOwned(_myArmSkin)) _myArmSkin = 0;
+            if (ver >= 11)
+            {
+                _statHeavyHits    = br.ReadInt32();
+                _statChestsOpened = br.ReadInt32();
+                _statMatches      = br.ReadInt32();
+                _chalClaimedHi    = br.ReadInt64();
+                _chalActivatedHi  = br.ReadInt64();
+                for (int i = 64; i < 128; i++)
+                    _chalBaselines[i] = br.ReadInt32();
+            }
         }
         catch { }
     }
@@ -64,7 +74,7 @@ public partial class Game1
                 "BRAWLHAVEN", "save.dat");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             using var bw = new BinaryWriter(File.Create(path));
-            bw.Write((byte)10);
+            bw.Write((byte)11);
             bw.Write(_playerName);
             bw.Write(_mySkin);
             bw.Write(_chalClaimed);
@@ -78,13 +88,19 @@ public partial class Game1
             bw.Write(_coins);
             bw.Write(_ownedSkins);
             bw.Write(_chalActivated);
-            foreach (int b in _chalBaselines) bw.Write(b);
+            for (int i = 0; i < 64; i++) bw.Write(_chalBaselines[i]);
             bw.Write(_myCHPattern);
             bw.Write(_ownedCHPatternsLo);
             bw.Write(_ownedCHPatternsHi);
             bw.Write(_myArmSkin);
             bw.Write(_showEyes);
             bw.Write(_ownedArmSkins);
+            bw.Write(_statHeavyHits);
+            bw.Write(_statChestsOpened);
+            bw.Write(_statMatches);
+            bw.Write(_chalClaimedHi);
+            bw.Write(_chalActivatedHi);
+            for (int i = 64; i < 128; i++) bw.Write(_chalBaselines[i]);
         }
         catch { }
     }

@@ -16,8 +16,7 @@ public partial class Game1
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
         {
-            bool claimed = (_chalClaimed & (1L << i)) != 0;
-            if (claimed) continue;
+            if (IsChalClaimed(i)) continue;
             if (visIdx >= 7) break;
 
             var  ch       = CHALLENGES[i];
@@ -83,8 +82,7 @@ public partial class Game1
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
         {
-            bool claimed = (_chalClaimed & (1L << i)) != 0;
-            if (claimed) continue;
+            if (IsChalClaimed(i)) continue;
             if (visIdx >= 7) break;
             int  ty      = startY + visIdx * (tileH + gapY);
             bool complete = ChalProgress(i) >= CHALLENGES[i].Target;
@@ -94,12 +92,9 @@ public partial class Game1
                 int claimX = startX + tileW - claimW - 10;
                 if (Clicked(click, claimX, ty, claimW, tileH))
                 {
-                    _chalClaimed |= (1L << i);
+                    SetChalClaimed(i);
                     _coins += CHALLENGES[i].Coins;
-                    bool allDone = true;
-                    for (int j = 0; j < CHALLENGES.Length; j++)
-                        if ((_chalClaimed & (1L << j)) == 0) { allDone = false; break; }
-                    if (allDone) { _chalClaimed = 0; _chalActivated = 0; }
+                    if (AllChalsClaimed()) ResetAllChals();
                     SaveGame();
                     return;
                 }

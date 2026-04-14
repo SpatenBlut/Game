@@ -7,9 +7,9 @@ public class Player
 {
     public const float W = 42f, H = 58f;
     public const int   MAX_STOCKS = 3;
-    public const float DODGE_CD       = 5.0f;
-    public const float DASH_DUR       = 0.14f;
-    public const float DASH_SPEED     = 880f;
+    public const float DODGE_CD       = 4.0f;
+    public const float DASH_DUR       = 0.22f;
+    public const float DASH_SPEED     = 1100f;
     public const float ATK_DUR       = 0.30f;  // Gesamtdauer Animation
     public const float ATK_HITBOX_DUR = 0.10f; // Aktives Trefferfenster
     public const float GRAVITY    = 2100f;
@@ -180,16 +180,12 @@ public class Player
 
         if (dodge && DodgeCD <= 0)
         {
-            var dashDir = DecodeAim(input.AimAngle);
+            var dashDir = new Vector2(0, -1);
             Vel         = dashDir * DASH_SPEED;
             InvTime     = 0.30f;
             DodgeCD     = DODGE_CD;
             _dashTimer  = DASH_DUR;
-            FacingRight = dashDir.X >= 0;
-            // Squash/Stretch entlang der Dash-Richtung
-            float absX = MathF.Abs(dashDir.X), absY = MathF.Abs(dashDir.Y);
-            if (absX >= absY) { SX = dashDir.X > 0 ? 1.55f : 0.60f; SY = 0.68f; }
-            else              { SX = 0.75f; SY = dashDir.Y < 0 ? 0.62f : 1.45f; }
+            SX = 0.75f; SY = 0.55f;
             game.SpawnBurst(Pos, new Color((int)Color.R, (int)Color.G, (int)Color.B, 200), 12);
         }
         else if (attack && !AttackActive && AtkCD<=0)

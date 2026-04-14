@@ -11,10 +11,41 @@ public partial class Game1
         >= 46 and <= 52 => _statBestStreak,
         >= 53 and <= 58 => _statPerfectWins,
         >= 59 and <= 63 => _statFastWin,
+        >= 64 and <= 68 => _statHeavyHits,
+        >= 69 and <= 73 => _statChestsOpened,
+        >= 74 and <= 78 => _statMatches,
         _ => 0
     };
 
     int ChalProgress(int i) => Math.Max(0, ChalStat(i) - _chalBaselines[i]);
+
+    bool IsChalClaimed(int i)   => i < 64 ? (_chalClaimed    & (1L << i))      != 0
+                                           : (_chalClaimedHi  & (1L << (i-64))) != 0;
+    bool IsChalActivated(int i) => i < 64 ? (_chalActivated  & (1L << i))      != 0
+                                           : (_chalActivatedHi& (1L << (i-64))) != 0;
+    void SetChalClaimed(int i)
+    {
+        if (i < 64) _chalClaimed    |= (1L << i);
+        else        _chalClaimedHi  |= (1L << (i-64));
+    }
+    void SetChalActivated(int i)
+    {
+        if (i < 64) _chalActivated   |= (1L << i);
+        else        _chalActivatedHi |= (1L << (i-64));
+    }
+    bool AllChalsClaimed()
+    {
+        for (int j = 0; j < CHALLENGES.Length; j++)
+            if (!IsChalClaimed(j)) return false;
+        return true;
+    }
+    void ResetAllChals()
+    {
+        _chalClaimed = 0; _chalClaimedHi = 0;
+        _chalActivated = 0; _chalActivatedHi = 0;
+        for (int i = 0; i < _chalBaselines.Length; i++) _chalBaselines[i] = 0;
+        _chalDirty = true;
+    }
 
     void ActivateVisibleChallenges()
     {
@@ -24,15 +55,15 @@ public partial class Game1
         int visIdx = 0;
         for (int i = 0; i < CHALLENGES.Length; i++)
         {
-            if ((_chalClaimed & (1L << i)) != 0) continue;
+            if (IsChalClaimed(i)) continue;
             if (visIdx >= 7) break;
-            if ((_chalActivated & (1L << i)) == 0)
+            if (!IsChalActivated(i))
             {
                 int stat   = ChalStat(i);
                 int target = CHALLENGES[i].Target;
                 // Wenn Ziel bereits erreicht → Baseline so setzen dass Progress = Target (sofort abholbar)
                 _chalBaselines[i] = stat >= target ? stat - target : stat;
-                _chalActivated   |= (1L << i);
+                SetChalActivated(i);
                 changed = true;
             }
             visIdx++;

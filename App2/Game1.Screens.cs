@@ -117,7 +117,7 @@ public partial class Game1
             {
                 _isLocalMode = true;
                 _bot         = new BotController();
-                ResetMatch();
+                _state       = GameState.MapSelect;
             }
             else
             {
@@ -130,6 +130,83 @@ public partial class Game1
                 _state = GameState.Lobby;
             }
             break;
+        }
+    }
+
+    static readonly string[] MAP_NAMES = { "CLASSIC", "SPACE", "BRIDGE", "RUINS" };
+
+    void DrawMapSelect()
+    {
+        DrawMenuBg();
+        int cx = SW / 2, cy = SH / 2;
+
+        string title = "SELECT MAP";
+        TxtBig(title, cx - TxtBigW(title)/2, 30, new Color(100, 140, 255));
+
+        const int cardW = 340, cardH = 80, cardGap = 22;
+        int totalW = 2 * cardW + cardGap;
+        int totalH = 2 * cardH + cardGap;
+        int startX = cx - totalW / 2;
+        int startY = cy - totalH / 2 - 10;
+
+        for (int i = 0; i < MAP_NAMES.Length; i++)
+        {
+            int col = i % 2, row = i / 2;
+            int cx2 = startX + col * (cardW + cardGap);
+            int cy2 = startY + row * (cardH + cardGap);
+
+            bool sel   = _selectedMap == i;
+            bool hover = _mousePos.X >= cx2 && _mousePos.X <= cx2 + cardW &&
+                         _mousePos.Y >= cy2 && _mousePos.Y <= cy2 + cardH;
+            Color bg   = sel   ? new Color(50, 70, 140)
+                       : hover ? new Color(40, 52, 100)
+                               : new Color(28, 32, 60);
+            Color edge = sel   ? new Color(110, 150, 255)
+                       : hover ? new Color(80, 110, 200)
+                               : new Color(44, 52, 90);
+            R(cx2 + 3, cy2 + 3, cardW, cardH, new Color(0, 0, 0, 60));
+            R(cx2, cy2, cardW, cardH, bg);
+            R(cx2, cy2, cardW, 2, edge);
+            R(cx2, cy2 + cardH - 2, cardW, 2, edge);
+            R(cx2, cy2, 2, cardH, edge);
+            R(cx2 + cardW - 2, cy2, 2, cardH, edge);
+
+            Color nameCol = sel || hover ? Color.White : new Color(160, 170, 220);
+            TxtBig(MAP_NAMES[i], cx2 + cardW/2 - TxtBigW(MAP_NAMES[i])/2, cy2 + cardH/2 - _fontBig.LineSpacing/2, nameCol);
+        }
+
+        int playBtnW = MENU_BW, playBtnY = startY + totalH + 28;
+        DrawButton(cx - playBtnW / 2, playBtnY, playBtnW, MENU_BH, "PLAY");
+        TxtMed("[ESC] BACK", cx - TxtMedW("[ESC] BACK")/2, playBtnY + MENU_BH + 16, new Color(100, 110, 160));
+    }
+
+    void HandleMapSelectClick(bool click)
+    {
+        if (!click) return;
+        int cx = SW / 2, cy = SH / 2;
+
+        const int cardW = 340, cardH = 110, cardGap = 22;
+        int totalW = 2 * cardW + cardGap;
+        int totalH = 2 * cardH + cardGap;
+        int startX = cx - totalW / 2;
+        int startY = cy - totalH / 2 - 10;
+
+        for (int i = 0; i < MAP_NAMES.Length; i++)
+        {
+            int col = i % 2, row = i / 2;
+            int cx2 = startX + col * (cardW + cardGap);
+            int cy2 = startY + row * (cardH + cardGap);
+            if (Clicked(click, cx2, cy2, cardW, cardH))
+            {
+                _selectedMap = i;
+                return;
+            }
+        }
+
+        int playBtnW = MENU_BW, playBtnY = startY + totalH + 28;
+        if (Clicked(click, cx - playBtnW / 2, playBtnY, playBtnW, MENU_BH))
+        {
+            ResetMatch();
         }
     }
 

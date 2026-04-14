@@ -1,0 +1,19 @@
+[11:07:40.820] === BRAWLHAVEN LOG ===
+[11:07:40.829] Zeit:       14.04.2026 11:07:40
+[11:07:40.829] OS:         Linux Mint 22.1
+[11:07:40.834] Arch:       X64
+[11:07:40.835] Runtime:    .NET 9.0.14
+[11:07:40.835] Log-Datei:  /home/nicola/RiderProjects/App2/publish/logs/game_2026-04-14_11-07-40.log
+[11:07:40.835] =====================
+[11:07:41.026] Viewport: 1920x1080
+[11:07:41.026] Adapter:  Mesa Intel(R) HD Graphics 520 (SKL GT2)
+[11:07:41.040] Initialize abgeschlossen – Zustand: Menu
+[11:07:42.618] EXCEPTION in Draw: ArgumentException: Text contains characters that cannot be resolved by this SpriteFont. (Parameter 'text')
+[11:07:42.638]   StackTrace:    at Microsoft.Xna.Framework.Graphics.SpriteFont.GetGlyphIndexOrDefault(Char c)
+                at Microsoft.Xna.Framework.Graphics.SpriteBatch.DrawString(SpriteFont spriteFont, String text, Vector2 position, Color color)
+                at Game1.TxtMed(String t, Int32 x, Int32 y, Color c) in /home/nicola/RiderProjects/App2/App2/Game1.Rendering.cs:line 355
+                at Game1.DrawMapSelect() in /home/nicola/RiderProjects/App2/App2/Game1.Screens.cs:line 182
+                at Game1.DrawInner(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 247
+                at Game1.Draw(GameTime gt) in /home/nicola/RiderProjects/App2/App2/Game1.cs:line 224
+[11:07:42.638] GameState=MapSelect
+[11:07:42.638] === Spiel beendet ===
